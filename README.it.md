@@ -1,6 +1,6 @@
-<p align="center"><img src="docs/img/apprua.gif" alt="Un'app fatta con l'AI arriva in barca al faro di Apprua, che la accende per tutti" width="100%"></p>
+<p align="center"><img src="docs/img/apprua.gif" alt="In una chat si chiede di pubblicare un'app su Apprua; il faro si accende e l'app è pronta da aprire" width="100%"></p>
 
-<h1 align="center"><img src="brand/wordmark-on-blue.svg" alt="Apprua" width="340"></h1>
+<h1 align="center"><img src="brand/logo.svg" alt="" width="40"> Apprua</h1>
 
 <p align="center"><b>Hai fatto un'app con l'AI. Ora usala davvero.</b><br>
 Apprua la mette sul tuo PC o sul tuo server, con una frase alla tua app AI.</p>
@@ -25,7 +25,7 @@ Dopo qualche minuto la tua AI risponde con l'indirizzo dell'app. Per cambiarla c
 
 <p align="center"><img src="docs/img/it/06-home-apps.webp" alt="Il portale di Apprua con le app di una persona: ognuna con il suo indirizzo e il suo stato" width="85%"></p>
 
-## Perché piace
+## Perché usarlo
 
 - **Resta a casa tua.** Apprua gira sulla tua macchina e non ha un cloud suo: le app e i loro dati restano sul tuo PC o sul tuo server, e decidi tu chi può aprire ciascuna.
 - **Niente di nuovo da imparare.** Continui a parlare con la tua app AI come fai già. Apprua impacchetta, controlla, costruisce e pubblica.

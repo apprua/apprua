@@ -1,6 +1,6 @@
-<p align="center"><img src="docs/img/apprua.gif" alt="An app built with AI sails to the Apprua lighthouse, which lights it up for everyone" width="100%"></p>
+<p align="center"><img src="docs/img/apprua.gif" alt="In a chat someone asks to publish an app on Apprua; the lighthouse lights up and the app is ready to open" width="100%"></p>
 
-<h1 align="center"><img src="brand/wordmark-on-blue.svg" alt="Apprua" width="340"></h1>
+<h1 align="center"><img src="brand/logo.svg" alt="" width="40"> Apprua</h1>
 
 <p align="center"><b>You built an app with AI. Now really use it.</b><br>
 Apprua puts it on your own PC or your own server, with one sentence to your AI app.</p>
@@ -25,7 +25,7 @@ A few minutes later your AI answers with the address of the app. To change it, a
 
 <p align="center"><img src="docs/img/en/06-home-apps.webp" alt="The Apprua portal with the apps of one person: each one with its address and its state" width="85%"></p>
 
-## Why people like it
+## Why use it
 
 - **It stays yours.** Apprua runs on your machine and has no cloud of its own: your apps and their data stay on your PC or server, and you decide who can open each one.
 - **Nothing new to learn.** You keep talking to your AI app as you do now. Apprua packs, checks, builds and publishes.
