@@ -9,7 +9,7 @@ Apprua puts it on your own PC or your own server, with one sentence to your AI a
 
 ---
 
-A shopping list, a quote calculator, a tool for your team: the AI wrote it and it works, but it lives in a chat or a folder. Apprua gives it a real address that you and the people you choose can open. No Git, Docker, servers or certificates to learn. Free and open source.
+A shopping list, a quote calculator, a tool for your team: the AI wrote it and it works, but it lives in a chat or a folder. Apprua gives it a real address that you and the people you choose can open. No Git, Docker, servers or certificates to learn. You don't have to be a developer: if you can ask an AI for an app, you can publish it. Free and open source.
 
 ## Three steps, then just ask
 
@@ -32,6 +32,7 @@ A few minutes later your AI answers with the address of the app. To change it, a
 - **Careful from the start.** A sign-in stands in front of every app on the network; each app runs in its own space with its own memory; a publication with the most common kinds of passwords and keys in its files is refused before it is published.
 - **Every version kept.** Each publication is saved: going back is one sentence away, and you can always download the code.
 - **For you or for your team.** A personal profile with nothing to set up, or a team profile with accounts, limits and administrators.
+- **A home for the apps people already make.** In a company, apps built with AI already pass from hand to hand. With Apprua, IT offers one official place on the company server: every app has an owner, a sign-in and all its versions. Less shadow IT, without saying no to people's ideas.
 - **A calm portal.** In English and Italian, light and dark, also on the phone.
 
 ## What it is made for
@@ -81,6 +82,6 @@ Development: Node.js 24, `npm install`, `npm run build`, `npm test`.
 
 Apprua is free software under the **GNU Affero General Public License v3.0** ([LICENSE](LICENSE)), and its core will stay that way. You can use it, change it and share it; if you offer a changed version to others over a network, you share your changes under the same license. The apps you publish with Apprua stay yours: publishing an app through Apprua does not put that app under the AGPL.
 
-Contributions are welcome: see [CONTRIBUTING](CONTRIBUTING.md). On your first pull request a bot asks you to sign the [Contributor License Agreement](CLA.md) with one comment. For security problems read [SECURITY](SECURITY.md).
+Contributions are welcome, also without writing code: try it, report what doesn't work, suggest ideas, improve the guide. See [CONTRIBUTING](CONTRIBUTING.md). On your first pull request a bot asks you to sign the [Contributor License Agreement](CLA.md) with one comment. For security problems read [SECURITY](SECURITY.md).
 
 The license covers the code, not the brand: the name "Apprua" and the lighthouse logo have their own simple rules in [TRADEMARKS](TRADEMARKS.md).

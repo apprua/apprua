@@ -9,7 +9,7 @@ Apprua la mette sul tuo PC o sul tuo server, con una frase alla tua app AI.</p>
 
 ---
 
-Una lista della spesa, un calcolatore di preventivi, uno strumento per il tuo gruppo: l'ha scritto l'AI e funziona, ma vive in una chat o in una cartella. Apprua dà alla tua app un indirizzo vero, che aprite tu e le persone che scegli. Niente Git, Docker, server o certificati da imparare. Gratis e open source.
+Una lista della spesa, un calcolatore di preventivi, uno strumento per il tuo gruppo: l'ha scritto l'AI e funziona, ma vive in una chat o in una cartella. Apprua dà alla tua app un indirizzo vero, che aprite tu e le persone che scegli. Niente Git, Docker, server o certificati da imparare. Non serve saper programmare: se sai chiedere un'app all'AI, sai anche pubblicarla. Gratis e open source.
 
 ## Tre passi, poi basta chiedere
 
@@ -32,6 +32,7 @@ Dopo qualche minuto la tua AI risponde con l'indirizzo dell'app. Per cambiarla c
 - **Protezioni fin dall'inizio.** Davanti a ogni app in rete c'è l'accesso con account; ogni app gira nel suo spazio, con la sua memoria; una pubblicazione con i tipi più comuni di password e chiavi nei file viene rifiutata prima di essere pubblicata.
 - **Ogni versione resta.** Ogni pubblicazione viene conservata: per tornare indietro basta una frase, e il codice si può sempre scaricare.
 - **Per te o per il tuo gruppo.** Un profilo personale senza niente da impostare, o un profilo per il gruppo con account, limiti e amministratori.
+- **Una casa per le app che le persone fanno già.** In azienda le app fatte con l'AI passano già di mano in mano. Con Apprua l'IT offre un posto ufficiale sul server dell'azienda: ogni app ha un proprietario, un accesso con account e tutte le sue versioni. Meno shadow IT, senza dire di no alle idee delle persone.
 - **Un portale tranquillo.** In italiano e in inglese, chiaro e scuro, anche sul telefono.
 
 ## A cosa serve
@@ -81,6 +82,6 @@ Per sviluppare: Node.js 24, `npm install`, `npm run build`, `npm test`.
 
 Apprua è software libero, con licenza **GNU Affero General Public License v3.0** ([LICENSE](LICENSE)), e il suo nucleo resterà così. Puoi usarlo, modificarlo e condividerlo; se offri ad altri una versione modificata attraverso la rete, condividi le tue modifiche con la stessa licenza. Le app che pubblichi con Apprua restano tue: pubblicarle con Apprua non le mette sotto AGPL.
 
-I contributi sono benvenuti: leggi [CONTRIBUTING](CONTRIBUTING.md) (in inglese; issue e pull request si possono scrivere anche in italiano). Alla prima pull request un bot ti chiede di firmare il [Contributor License Agreement](CLA.md) con un commento. Per i problemi di sicurezza leggi [SECURITY](SECURITY.md).
+I contributi sono benvenuti, anche senza scrivere codice: provarlo, segnalare cosa non va, proporre idee, migliorare la guida. Leggi [CONTRIBUTING](CONTRIBUTING.md) (in inglese; issue e pull request si possono scrivere anche in italiano). Alla prima pull request un bot ti chiede di firmare il [Contributor License Agreement](CLA.md) con un commento. Per i problemi di sicurezza leggi [SECURITY](SECURITY.md).
 
 La licenza copre il codice, non la marca: il nome "Apprua" e il logo del faro hanno le loro regole semplici in [TRADEMARKS](TRADEMARKS.md).
