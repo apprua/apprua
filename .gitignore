@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.mcpb
+.env
+.env.*
+*.db
+*.db-*
+**/pack-under-test.mjs
+.impeccable/
+release/

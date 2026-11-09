@@ -1,0 +1,28 @@
+{
+  "name": "@apprua/server",
+  "private": true,
+  "version": "1.0.0",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "main": "dist/src/server.js",
+  "bin": {
+    "apprua-admin": "dist/src/cli/admin.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/src/server.js",
+    "test": "tsc -p tsconfig.json && node --test \"dist/test/**/*.test.js\""
+  },
+  "dependencies": {
+    "@fastify/multipart": "^9.0.3",
+    "fastify": "^5.2.1",
+    "fflate": "^0.8.2",
+    "nodemailer": "^10.4.0",
+    "tar": "^7.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/nodemailer": "^8.0.2",
+    "typescript": "^5.7.3"
+  }
+}

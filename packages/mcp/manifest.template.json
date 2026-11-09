@@ -1,0 +1,62 @@
+{
+  "manifest_version": "0.3",
+  "name": "apprua",
+  "display_name": "{{BRAND}}",
+  "version": "{{VERSION}}",
+  "description": "Publish and manage the apps you build with AI on your own {{BRAND}} server.",
+  "long_description": "{{BRAND}} lets your AI app publish a local folder as a web app on your own server (or your own PC), publish new versions, read logs, set secrets and manage your apps. Open source (AGPL-3.0).",
+  "author": { "name": "Apprua" },
+  "license": "AGPL-3.0-only",
+  "icon": "icon.png",
+  "server": {
+    "type": "node",
+    "entry_point": "server/index.mjs",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/server/index.mjs"],
+      "env": {
+        "APPRUA_URL": "${user_config.url}",
+        "APPRUA_TOKEN": "${user_config.token}",
+        "APPRUA_BRAND": "{{BRAND}}"
+      }
+    }
+  },
+  "user_config": {
+    "url": {
+      "type": "string",
+      "title": "{{BRAND}} address",
+      "description": "Address of your {{BRAND}} portal",
+      "default": "{{PUBLIC_URL}}",
+      "required": true
+    },
+    "token": {
+      "type": "string",
+      "title": "Personal token",
+      "description": "Create it in the {{BRAND}} portal. It expires on its own.",
+      "sensitive": true,
+      "required": true
+    }
+  },
+  "tools_generated": true,
+  "tools": [
+    { "name": "publish_app", "description": "Publish a local folder as a new app" },
+    { "name": "update_app", "description": "Publish a new version of an app" },
+    { "name": "list_my_apps", "description": "List my apps" },
+    { "name": "app_status", "description": "Status and last deploy of an app" },
+    { "name": "app_logs", "description": "Last log lines of an app" },
+    { "name": "restart_app", "description": "Restart an app" },
+    { "name": "stop_app", "description": "Stop an app" },
+    { "name": "start_app", "description": "Start an app" },
+    { "name": "set_env", "description": "Set an environment variable or secret" },
+    { "name": "unset_env", "description": "Remove an environment variable or secret" },
+    { "name": "restore_version", "description": "Go back to an earlier version of an app" },
+    { "name": "set_visibility", "description": "Choose who can open an app" },
+    { "name": "archive_app", "description": "Stop and archive an app" },
+    { "name": "clone_app", "description": "Download the code of an app" }
+  ],
+  "compatibility": {
+    "platforms": ["win32", "darwin", "linux"],
+    "runtimes": { "node": ">=20.0.0" }
+  },
+  "keywords": ["deploy", "self-hosted", "apps", "mcp", "apprua"]
+}

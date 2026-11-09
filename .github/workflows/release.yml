@@ -1,0 +1,85 @@
+# A release, from a tag like v0.2.0 (see RELEASING.md):
+#   1. the tag must match the version of the code; build and tests must pass
+#   2. the Apprua image, for Intel/AMD and ARM servers: ghcr.io/apprua/apprua:0.2.0, :0.2 and :latest
+#   3. the files of the release (scripts/release.mjs): apprua.zip, apprua.tar.gz, apprua.mcpb, SHA256SUMS.txt
+#   4. the connector on npm (@apprua/mcp), only if the repository variable NPM_PUBLISH is "true": trusted publishing
+#      (GitHub proves to npm who it is, no token to keep). One-time setup in RELEASING.md
+#   5. the GitHub release, with the text of its CHANGELOG section
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write   # trusted publishing on npm
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Version, build and tests
+        id: v
+        run: |
+          node scripts/release.mjs check "$GITHUB_REF_NAME"
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "minor=$(echo "$VERSION" | cut -d. -f1,2)" >> "$GITHUB_OUTPUT"
+          case "$VERSION" in *-*) echo "pre=true" >> "$GITHUB_OUTPUT" ;; *) echo "pre=false" >> "$GITHUB_OUTPUT" ;; esac
+          npm ci
+          npm run build
+          npm test
+
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: The Apprua image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.v.outputs.version }}
+            ${{ steps.v.outputs.pre == 'false' && format('{0}:{1}', env.IMAGE, steps.v.outputs.minor) || '' }}
+            ${{ steps.v.outputs.pre == 'false' && format('{0}:latest', env.IMAGE) || '' }}
+          labels: |
+            org.opencontainers.image.title=Apprua
+            org.opencontainers.image.description=A lighthouse for the apps your AI builds
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.v.outputs.version }}
+            org.opencontainers.image.licenses=AGPL-3.0-only
+
+      - name: Files of the release
+        run: |
+          node scripts/release.mjs files "${{ steps.v.outputs.version }}" "$IMAGE:${{ steps.v.outputs.version }}"
+          node scripts/release.mjs notes "${{ steps.v.outputs.version }}" > release/NOTES.md
+
+      - name: The connector on npm
+        run: |
+          if [ "${{ vars.NPM_PUBLISH }}" != "true" ]; then echo "NPM_PUBLISH is not true: the connector is not published on npm."; exit 0; fi
+          npm install -g npm@11.21.1   # trusted publishing needs 11.5.1 or newer
+          npm publish --workspace @apprua/mcp --access public ${{ steps.v.outputs.pre == 'true' && '--tag next' || '' }}
+
+      - name: The GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" release/apprua.zip release/apprua.tar.gz release/apprua.mcpb release/SHA256SUMS.txt \
+            --title "Apprua ${{ steps.v.outputs.version }}" --notes-file release/NOTES.md \
+            ${{ steps.v.outputs.pre == 'true' && '--prerelease' || '' }}

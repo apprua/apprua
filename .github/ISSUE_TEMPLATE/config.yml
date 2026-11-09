@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: A security problem
+    url: https://github.com/apprua/apprua/security/advisories/new
+    about: Please report it privately, never in a public issue.
+  - name: A question or an idea to discuss
+    url: https://github.com/apprua/apprua/discussions
+    about: Ask anything, in English or Italian.

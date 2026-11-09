@@ -1,0 +1,22 @@
+{
+  "name": "apprua",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Publish what your AI builds. Self-hosted app publishing for anything built with an AI chat, through MCP.",
+  "license": "AGPL-3.0-only",
+  "workspaces": [
+    "packages/server",
+    "packages/mcp"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace @apprua/mcp && npm run build --workspace @apprua/server",
+    "test": "npm test --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "apprua": {
+    "coolify": "4.6.0",
+    "//": "the version of Coolify this Apprua was tested with: install.sh installs it and never lets Coolify update by itself"
+  }
+}

@@ -1,0 +1,36 @@
+name: Something does not work
+description: Installing, connecting your AI app, publishing, the portal...
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for telling us. You can write in English or Italian. **Remove keys and passwords** from anything you paste.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you were doing, what you expected, what you saw instead.
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where is your Apprua?
+      options:
+        - On a Windows PC
+        - On a Linux server
+        - I could not install it
+    validations:
+      required: true
+  - type: input
+    id: ai
+    attributes:
+      label: Which AI app do you use?
+      placeholder: Claude Desktop, Claude Code, Cursor, VS Code...
+  - type: textarea
+    id: messages
+    attributes:
+      label: Messages
+      description: The last lines of the installer, or the error your AI app showed.
+      render: text

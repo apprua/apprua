@@ -1,0 +1,39 @@
+# Contributor License Agreement: on the first pull request a bot asks the author to sign CLA.md with one comment.
+# Signatures are stored in signatures/cla-v<N>.json on the branch "cla-signatures" (create it once, empty, before launch).
+# The text of CLA.md carries a version number: when the text changes, its number goes up, and so do the number in the
+# sentence to sign and in the file of signatures below, so everyone signs the new text again and each signature stays
+# tied to the version it was given for.
+# The action never checks out or runs the code of the pull request.
+name: CLA
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_target:
+    types: [opened, closed, synchronize]
+
+permissions:
+  actions: write
+  contents: write
+  pull-requests: write
+  statuses: write
+
+jobs:
+  cla:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check or record the signature
+        if: (github.event.comment.body == 'recheck' || github.event.comment.body == 'I have read the CLA Document version 1 and I hereby sign the CLA') || github.event_name == 'pull_request_target'
+        uses: contributor-assistant/github-action@ca4a40a7d1004f18d9960b404b97e5f30a505a08 # v2.6.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          path-to-document: 'https://github.com/apprua/apprua/blob/main/CLA.md'
+          path-to-signatures: 'signatures/cla-v1.json'
+          custom-pr-sign-comment: 'I have read the CLA Document version 1 and I hereby sign the CLA'
+          branch: 'cla-signatures'
+          # exact names: an entry with * becomes a pattern that matches anywhere in a name (someone called
+          # "x-dependabot-y" would skip the CLA); without * the action compares the name as it is
+          allowlist: 'dependabot[bot],github-actions[bot]'
+          custom-notsigned-prcomment: 'Thank you for your contribution! Before we can merge it, please read the [Contributor License Agreement](https://github.com/apprua/apprua/blob/main/CLA.md): you keep the copyright of your work. To sign, reply to this pull request with the sentence below.'
+          custom-allsigned-prcomment: 'All contributors have signed the CLA. Thank you!'

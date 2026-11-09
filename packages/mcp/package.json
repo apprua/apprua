@@ -1,0 +1,51 @@
+{
+  "name": "@apprua/mcp",
+  "version": "1.0.0",
+  "description": "Apprua connector for AI apps (MCP): publish the apps you build with AI on your own Apprua server, from Claude, Codex, Cursor, VS Code and any app that supports MCP.",
+  "author": "The Apprua authors",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "bin": {
+    "apprua-mcp": "dist/server.mjs"
+  },
+  "files": [
+    "dist/server.mjs",
+    "dist/THIRD_PARTY_LICENSES.txt"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/apprua/apprua.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://github.com/apprua/apprua#readme",
+  "bugs": "https://github.com/apprua/apprua/issues",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "self-hosted",
+    "deploy",
+    "apprua",
+    "claude",
+    "cursor",
+    "vscode"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit && node build.mjs",
+    "test": "npm run build && esbuild src/pack.ts --bundle --platform=node --format=esm --outfile=test/pack-under-test.mjs --log-level=warning --banner:js=\"import{createRequire}from'module';const require=createRequire(import.meta.url);\" && node --test \"test/**/*.test.mjs\""
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "@types/node": "^24.0.0",
+    "esbuild": "^0.28.2",
+    "ignore": "^7.0.3",
+    "tar": "^7.4.3",
+    "typescript": "^5.7.3",
+    "zod": "^4.6.7"
+  }
+}
