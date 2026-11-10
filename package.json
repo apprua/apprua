@@ -1,7 +1,7 @@
 {
   "name": "apprua",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Publish what your AI builds. Self-hosted app publishing for anything built with an AI chat, through MCP.",
   "license": "AGPL-3.0-only",
   "workspaces": [

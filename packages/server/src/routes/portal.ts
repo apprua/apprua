@@ -509,7 +509,7 @@ export async function portalRoutes(app: FastifyInstance) {
     const email = String(body(req).email ?? '').toLowerCase();
     if (config.auth.mode !== 'local' || !getUser(email)) throw new HttpError(404, 'Unknown person.');
     const password = randomPassword();
-    setPassword(email, password, u.email);
+    setPassword(email, password, u.email, { endKey: true });
     // the administrator who gave themselves a new password stays signed in on this device
     if (email === u.email) startSession(req, reply, u.email);
     return html(req, reply, await settingsHtml(lang, getUser(u.email)!, newPasswordNotice(lang, email, password)));

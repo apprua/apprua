@@ -119,6 +119,9 @@ test('the git server serves clones with the right key only, never pushes', async
     assert.equal(wrong.status, 404);
     const push = await fetch(`${repos.internalGitUrl('my-notes')}/info/refs?service=git-receive-pack`);
     assert.equal(push.status, 403);
+    // an address that cannot be read is answered, and the server stays up
+    assert.equal((await fetch('http://127.0.0.1:39417//')).status, 400);
+    assert.equal((await fetch(`${repos.internalGitUrl('my-notes')}/info/refs?service=git-receive-pack`)).status, 403, 'still answering');
   } finally { server.close(); }
 });
 

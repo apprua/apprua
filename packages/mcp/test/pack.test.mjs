@@ -41,6 +41,18 @@ test('packing respects .gitignore and always-excluded paths', async () => {
   assert.deepEqual(files, ['.env.example', '.gitignore', 'index.html', 'src/app.js']);
 });
 
+test('the state file of a folder: a name or a version that are not real ones are ignored', async () => {
+  const { readState } = await import('./pack-under-test.mjs');
+  const withState = (s) => { const d = mkdtempSync(join(tmpdir(), 'st-')); writeFileSync(join(d, '.apprua.json'), typeof s === 'string' ? s : JSON.stringify(s)); return d; };
+  assert.deepEqual(readState(withState({ app: 'my-notes', url: 'http://x', commit: 'abc1234' })), { app: 'my-notes', commit: 'abc1234' });
+  assert.deepEqual(readState(withState({ app: '../admin/users/a@b.c/revoke?', commit: 'abc1234' })), {}, 'a path is not a name');
+  assert.deepEqual(readState(withState({ app: 'other-app/stop?x=', commit: 'abc1234' })), {});
+  assert.deepEqual(readState(withState({ app: ['my-notes'], commit: 'abc1234' })), {});
+  assert.deepEqual(readState(withState({ app: 'my-notes', commit: '../x' })), { app: 'my-notes' }, 'no version: treated as never published from here');
+  assert.deepEqual(readState(withState('not json')), {});
+  assert.deepEqual(readState(mkdtempSync(join(tmpdir(), 'st-'))), {});
+});
+
 test('packing: .gitignore in subfolders, keys of the PC never, folders that are not a project refused', async () => {
   const { listPublishable, checkFolder } = await import('./pack-under-test.mjs');
   const d = mkdtempSync(join(tmpdir(), 'pk-'));

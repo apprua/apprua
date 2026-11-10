@@ -29,7 +29,7 @@ Dopo qualche minuto la tua AI risponde con l'indirizzo dell'app. Per cambiarla c
 
 - **Resta a casa tua.** Apprua gira sulla tua macchina e non ha un cloud suo: le app e i loro dati restano sul tuo PC o sul tuo server, e decidi tu chi può aprire ciascuna.
 - **Niente di nuovo da imparare.** Continui a parlare con la tua app AI come fai già. Apprua impacchetta, controlla, costruisce e pubblica.
-- **Protezioni fin dall'inizio.** Davanti a ogni app in rete c'è l'accesso con account; ogni app gira nel suo spazio, con la sua memoria; una pubblicazione con i tipi più comuni di password e chiavi nei file viene rifiutata prima di essere pubblicata.
+- **Protezioni fin dall'inizio.** Davanti a ogni app in rete c'è l'accesso con account; ogni app gira nel suo spazio, con la sua memoria; una pubblicazione con dentro chiavi nei formati più comuni (chiavi API, chiavi private, file `.env`) viene rifiutata prima di essere pubblicata.
 - **Ogni versione resta.** Ogni pubblicazione viene conservata: per tornare indietro basta una frase, e il codice si può sempre scaricare.
 - **Per te o per il tuo gruppo.** Un profilo personale senza niente da impostare, o un profilo per il gruppo con account, limiti e amministratori.
 - **Una casa per le app che le persone fanno già.** In azienda le app fatte con l'AI passano già di mano in mano. Con Apprua l'IT offre un posto ufficiale sul server dell'azienda: ogni app ha un proprietario, un accesso con account e tutte le sue versioni. Meno shadow IT, senza dire di no alle idee delle persone.

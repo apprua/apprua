@@ -3,6 +3,30 @@
 Every release of Apprua, newest first. Each section is also the text of the release on GitHub.
 The version numbers follow [semantic versioning](https://semver.org): only a new major version (2.0) can change how things work; minor and patch versions (1.1, 1.0.1) keep it.
 
+## [1.0.1]
+
+**English**
+
+A security release. Updating is recommended for every installation, and needed where more than one person publishes.
+
+- An archive with a `.git` folder or file inside it is refused, at any depth. Before, a person with a personal key could send an archive made by hand, with a git repository hidden in a subfolder: at the next publication of that app, git obeyed the settings of that repository and ran a command inside Apprua, with access to its data and to the engine. The connector never sends `.git`, so the apps published from an AI app are not affected. Found by an audit of the public code.
+- A request with an address that cannot be read (for example `//`) no longer stops the server: it gets an answer. It could be sent only from the machine itself or during a build, not from the network. The same for a body that the internal git server refuses.
+- The connector no longer trusts the name and the version written in `.apprua.json` when they do not look like real ones: a downloaded project could bring a file that sent "update this app" to another address of the portal.
+- A password that was lost also ends the personal key: after the "forgot your password?" link, or a new password given by an administrator, the person creates a new key and puts it in the AI app. A password changed in "Your account" keeps the key.
+- Texts: the README and the server guide say what the check on publications finds (keys in the common formats, private keys, `.env` files) and no longer promise that it finds passwords; the server guide says how to update without ending up in a folder inside the folder, and that the installer builds from the code when the download of the image fails; the configuration page says when the setup code is set.
+- The connector on npm is published from GitHub, with provenance, and carries its name for the MCP registry.
+
+**Italiano**
+
+Una versione di sicurezza. Si consiglia di aggiornare ogni installazione; è necessario dove pubblica più di una persona.
+
+- Un archivio con dentro una cartella o un file `.git` viene rifiutato, a qualsiasi profondità. Prima, una persona con una chiave personale poteva mandare un archivio costruito a mano, con un repository git nascosto in una sottocartella: alla pubblicazione successiva di quell'app, git seguiva le impostazioni di quel repository ed eseguiva un comando dentro Apprua, con accesso ai suoi dati e al motore. Il connettore non manda mai `.git`, quindi le app pubblicate da un'app AI non sono toccate. Trovato da una verifica del codice pubblico.
+- Una richiesta con un indirizzo che non si può leggere (per esempio `//`) non ferma più il server: riceve una risposta. Si poteva mandare solo dalla macchina stessa o durante una build, non dalla rete. Lo stesso per un contenuto che il server git interno rifiuta.
+- Il connettore non si fida più del nome e della versione scritti in `.apprua.json` quando non somigliano a quelli veri: un progetto scaricato poteva portare un file che mandava "aggiorna questa app" a un altro indirizzo del portale.
+- Una password persa chiude anche la chiave personale: dopo il link "password dimenticata", o una nuova password data da un amministratore, la persona crea una nuova chiave e la mette nell'app AI. Una password cambiata in "Il tuo account" lascia la chiave com'è.
+- Testi: il README e la guida per il server dicono che cosa trova il controllo sulle pubblicazioni (chiavi nei formati comuni, chiavi private, file `.env`) e non promettono più che trovi le password; la guida per il server dice come aggiornare senza finire in una cartella dentro la cartella, e che l'installer costruisce dal codice quando il download dell'immagine non riesce; la pagina della configurazione dice quando viene impostato il codice di configurazione.
+- Il connettore su npm è pubblicato da GitHub, con provenienza, e porta il suo nome per il registro MCP.
+
 ## [1.0.0]
 
 **English**

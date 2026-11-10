@@ -192,6 +192,34 @@ test('archive extraction skips symlinks', async () => {
   assert.deepEqual(await checks.listFiles(out), ['a.txt']);
 });
 
+test('an archive with a ".git" inside is refused, at any depth, as a folder or as a file', async () => {
+  const pack = async (files: Record<string, string>) => {
+    const src = await folder(files);
+    const arc = join(await mkdtemp(join(tmpdir(), 'arc-')), 'x.tar.gz');
+    await tar.c({ gzip: true, file: arc, cwd: src }, ['.']);
+    return arc;
+  };
+  const cases: Record<string, string>[] = [
+    { 'index.html': 'hi', '.git/config': '[core]\n' },
+    { 'index.html': 'hi', 'sub/.git/config': '[core]\n', 'sub/f.txt': 'x' },
+    { 'index.html': 'hi', 'a/b/c/.git/HEAD': 'ref: refs/heads/main\n' },
+    { 'index.html': 'hi', 'sub/.git': 'gitdir: /somewhere/else\n' },
+    { 'index.html': 'hi', 'sub/.GIT/config': '[core]\n' },
+  ];
+  for (const files of cases) {
+    const out = await mkdtemp(join(tmpdir(), 'out-'));
+    await assert.rejects(checks.extractArchive(await pack(files), out), /"\.git" folder or file/, Object.keys(files).join(', '));
+    assert.deepEqual((await checks.listFiles(out)).filter((f) => /\.git/i.test(f)), [], 'nothing of it is written');
+  }
+  // names that only look like it are fine
+  const ok = await mkdtemp(join(tmpdir(), 'out-'));
+  await checks.extractArchive(await pack({ 'index.html': 'hi', '.gitignore': 'x', 'docs/git.md': 'x', 'x.git/readme': 'x' }), ok);
+  assert.deepEqual(await checks.listFiles(ok), ['.gitignore', 'docs/git.md', 'index.html', 'x.git/readme']);
+  // the check on the files themselves, whatever brought them there (used again right before the code archive)
+  await assert.rejects(checks.assertNoGitInside(await folder({ 'a.txt': 'x', 'deep/er/.git/config': 'x' })), /"\.git" folder or file/);
+  await checks.assertNoGitInside(await folder({ 'a.txt': 'x', 'deep/.gitignore': 'x' }));
+});
+
 test('archive over the limits: a refused upload, not a stopped server', async () => {
   const src = await folder({ 'a.txt': '1', 'b.txt': '2', 'c.txt': '3', 'd.txt': '4' });
   const arc = join(await mkdtemp(join(tmpdir(), 'arc-')), 'x.tar.gz');

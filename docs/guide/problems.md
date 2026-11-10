@@ -77,8 +77,8 @@ Apprua uses at most the memory you gave it (usually half of the PC's). You can:
 
 On the sign-in page, click **Forgot your password?**.
 
-- **If Apprua can send emails** (on servers, when it has been set up), type your email: a link valid for one hour arrives to choose a new one.
-- **Otherwise ask an administrator:** in **Settings**, next to your email, there is **New password**. Apprua makes one up and shows it once to the administrator, who tells it to you in person or on the phone.
+- **If Apprua can send emails** (on servers, when it has been set up), type your email: a link valid for one hour arrives to choose a new one. Your personal key stops working too: after signing in, create a new one and put it in your AI app.
+- **Otherwise ask an administrator:** in **Settings**, next to your email, there is **New password**. Apprua makes one up and shows it once to the administrator, who tells it to you in person or on the phone. Your personal key stops working too: after signing in, create a new one and put it in your AI app.
 - **If you are the administrator**, run one of these commands from the Apprua folder. It writes a new password: sign in with it, then change it in **Your account**.
 
 On a Windows PC:

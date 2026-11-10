@@ -107,11 +107,13 @@ function asset(path: string): { type: string; body: Buffer } | null {
 }
 
 export function signpostHandler(req: IncomingMessage, res: ServerResponse): void {
-  const url = new URL(req.url ?? '/', 'http://x');
   const send = (status: number, type: string, body: string | Buffer, cache: string) => {
     res.writeHead(status, { 'Content-Type': type, 'Cache-Control': cache, 'X-Content-Type-Options': 'nosniff' });
     res.end(req.method === 'HEAD' ? undefined : body);
   };
+  // An address that cannot be read (for example "//") gets an answer: an error thrown here would stop the whole server.
+  let url: URL;
+  try { url = new URL(req.url ?? '/', 'http://x'); } catch { return send(400, 'text/plain', 'Bad request', 'no-store'); }
   if (url.pathname === `${BASE}/favicon.svg`) return send(200, 'image/svg+xml', favicon(), 'public, max-age=86400');
   // "Check" in Settings: the browser asks a made-up app name, to see that from that device the names lead here
   if (url.pathname === `${BASE}/ping`) {

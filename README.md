@@ -29,7 +29,7 @@ A few minutes later your AI answers with the address of the app. To change it, a
 
 - **It stays yours.** Apprua runs on your machine and has no cloud of its own: your apps and their data stay on your PC or server, and you decide who can open each one.
 - **Nothing new to learn.** You keep talking to your AI app as you do now. Apprua packs, checks, builds and publishes.
-- **Careful from the start.** A sign-in stands in front of every app on the network; each app runs in its own space with its own memory; a publication with the most common kinds of passwords and keys in its files is refused before it is published.
+- **Careful from the start.** A sign-in stands in front of every app on the network; each app runs in its own space with its own memory; a publication whose files hold keys in the most common formats (API keys, private keys, `.env` files) is refused before it is published.
 - **Every version kept.** Each publication is saved: going back is one sentence away, and you can always download the code.
 - **For you or for your team.** A personal profile with nothing to set up, or a team profile with accounts, limits and administrators.
 - **A home for the apps people already make.** In a company, apps built with AI already pass from hand to hand. With Apprua, IT offers one official place on the company server: every app has an owner, a sign-in and all its versions. Less shadow IT, without saying no to people's ideas.

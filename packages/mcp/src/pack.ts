@@ -9,6 +9,18 @@ import ignore, { type Ignore } from 'ignore';
 import * as tar from 'tar';
 
 export const STATE_FILE = '.apprua.json';
+export const APP_NAME_RE = /^[a-z][a-z0-9-]{2,30}$/;
+
+/** What this connector wrote in the folder at the last publication. The file can also come with a downloaded
+ *  project: a name or a version that do not look like the real ones are ignored (the name becomes part of an address). */
+export function readState(dir: string): { app?: string; commit?: string } {
+  try {
+    const s = JSON.parse(readFileSync(join(dir, STATE_FILE), 'utf8'));
+    if (typeof s?.app !== 'string' || !APP_NAME_RE.test(s.app)) return {};
+    if (typeof s?.commit !== 'string' || !/^[0-9a-f]{7,40}$/.test(s.commit)) return { app: s.app };
+    return { app: s.app, commit: s.commit };
+  } catch { return {}; }
+}
 const ALWAYS_EXCLUDED = ['node_modules/', '.git/', '.env', '.env.*', '!.env.example', '__pycache__/', '.venv/', 'venv/', STATE_FILE,
   '.DS_Store', 'Thumbs.db',
   // keys and credentials of the PC, never part of an app

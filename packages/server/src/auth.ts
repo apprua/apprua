@@ -100,10 +100,12 @@ export function createLocalUser(email: string, name: string | null, password: st
 }
 
 /** Sets a new password. Sessions are tied to the password (see sessionKey), so every device signed in with the old
- *  one is signed out. */
-export function setPassword(email: string, password: string, by: string): void {
+ *  one is signed out. With endKey (a password that was lost: the "forgot your password?" link, or a new one given
+ *  by an administrator) the personal key stops working too: whoever got into the account may have made one. */
+export function setPassword(email: string, password: string, by: string, opts: { endKey?: boolean } = {}): void {
   checkNewPassword(password);
   getDb().prepare('UPDATE users SET password_hash = ? WHERE email = ?').run(hashPassword(password), email);
+  if (opts.endKey && getUser(email)?.token_hash) revokeToken(email, by);
   // a "forgot your password?" link asked for before stops working too
   getDb().prepare(`UPDATE password_resets SET used_at = datetime('now') WHERE email = ? AND used_at IS NULL`).run(email);
   audit(by, 'user.password', null, { email });
@@ -149,7 +151,7 @@ export function resetTokenEmail(token: string): string | null {
 export function useResetToken(token: string, password: string): string {
   const email = resetTokenEmail(token);
   if (!email) throw new HttpError(400, 'err.reset_invalid');
-  setPassword(email, password, email);
+  setPassword(email, password, email, { endKey: true });
   getDb().prepare(`UPDATE password_resets SET used_at = datetime('now') WHERE email = ? AND used_at IS NULL`).run(email);
   return email;
 }

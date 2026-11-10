@@ -56,9 +56,9 @@ sudo APPRUA_PROFILE=team APPRUA_NETWORK=internet APPRUA_DOMAIN=app.tuaazienda.it
 
 Ci vogliono **da 5 a 15 minuti**. Alla fine l'installazione scrive l'indirizzo del portale e un **codice di configurazione** (per esempio `K7QM-2XPA-9TRB`). Copialo: serve una volta sola e impedisce che qualcun altro si prenda un Apprua appena installato. Lo trovi anche nel file `/root/.apprua/apprua.env`.
 
-L'installazione scarica Apprua già pronto (un'immagine per ogni versione), senza compilare niente sul server.
+L'installazione scarica Apprua già pronto (un'immagine per ogni versione), senza compilare niente sul server (solo se quel download non riesce, l'installer costruisce Apprua dal codice nella cartella).
 
-**Aggiornare:** dalla cartella in cui avevi scaricato Apprua, riscarica l'ultima versione con il primo comando e rilancia `sudo bash install/install.sh`, senza opzioni: le scelte restano salvate, e anche app e dati. Le novità di ogni versione sono nelle [note di rilascio](https://github.com/apprua/apprua/releases).
+**Aggiornare:** vai nella cartella che contiene la cartella `apprua` (quella in cui avevi lanciato il primo comando), riscarica l'ultima versione con quel comando e rilancia `sudo bash install/install.sh`, senza opzioni: le scelte restano salvate, e anche app e dati. Le novità di ogni versione sono nelle [note di rilascio](https://github.com/apprua/apprua/releases).
 
 Chi preferisce partire dal codice può usare `git clone https://github.com/apprua/apprua`: in quel caso l'installazione costruisce Apprua sul server, e per aggiornare basta `git pull`.
 
@@ -87,7 +87,7 @@ Gli amministratori vedono tutte le app di tutti, possono cambiarne il proprietar
 - **Il pannello del motore è chiuso alla rete** (porte 8000, 6001 e 6002), anche se Docker di solito le apre scavalcando il firewall. Per aprirlo dal tuo PC usa un tunnel: `ssh -L 8000:localhost:8000 utente@server`, poi `http://localhost:8000`. In **Impostazioni > Il motore (per esperti)** trovi il comando per la password.
 - **Il login sta davanti a ogni app**: senza account non si apre niente, a meno che il proprietario scelga *Tutti, senza accesso*.
 - **Ogni app sta nella sua corsia**: un'app può rispondere alle visite e uscire su internet, ma non può collegarsi direttamente alle altre app (solo dal loro indirizzo, passando dal login), né ad Apprua, al motore, al suo database o al server stesso. Ci pensa un piccolo servizio, `apprua-guard`, che si aggiorna da solo quando le app si accendono e si spengono. Le app possono invece raggiungere la rete dell'ufficio, se ne hanno bisogno.
-- **Le pubblicazioni vengono controllate**: se una cartella contiene password, chiavi o file `.env`, Apprua la rifiuta e spiega come spostare quei valori nei segreti dell'app.
+- **Le pubblicazioni vengono controllate**: se una cartella contiene chiavi nei formati comuni (chiavi API, chiavi private) o file `.env`, Apprua la rifiuta e spiega come spostare quei valori nei segreti dell'app. Trova gli errori più frequenti; non può riconoscere una password scritta nel codice.
 - **Ogni azione resta nel registro** (chi ha pubblicato cosa, chi ha cambiato un segreto, chi ha messo in pausa).
 
 ## 6. Copie di sicurezza

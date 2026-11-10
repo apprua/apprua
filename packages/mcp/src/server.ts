@@ -10,7 +10,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import * as tar from 'tar';
 import { z } from 'zod';
 import { api, ApiError, download, uploadArchive } from './client.js';
-import { packFolder, STATE_FILE } from './pack.js';
+import { APP_NAME_RE, packFolder, readState, STATE_FILE } from './pack.js';
 
 const BRAND = process.env.APPRUA_BRAND ?? 'Apprua';
 declare const __APPRUA_VERSION__: string;   // written by build.mjs from package.json
@@ -28,10 +28,7 @@ async function run(fn: () => Promise<Content>): Promise<Content> {
   }
 }
 
-const appName = z.string().regex(/^[a-z][a-z0-9-]{2,30}$/).describe('App name = sub-domain, e.g. "my-notes" (lowercase letters, digits, dashes)');
-const readState = (dir: string): { app?: string; commit?: string } => {
-  try { return JSON.parse(readFileSync(join(dir, STATE_FILE), 'utf8')); } catch { return {}; }
-};
+const appName = z.string().regex(APP_NAME_RE).describe('App name = sub-domain, e.g. "my-notes" (lowercase letters, digits, dashes)');
 const saveState = (dir: string, r: { app: string; url: string; commit: string }) => {
   if (r.commit) writeFileSync(join(dir, STATE_FILE), json({ app: r.app, url: r.url, commit: r.commit }));
 };

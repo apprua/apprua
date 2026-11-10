@@ -72,6 +72,9 @@ test('served on its own port: page by Host, assets, nothing else', async () => {
     assert.equal(font.status, 200);
     const sneaky = await fetch(`${base}/_apprua/img/..%2F..%2Fpackage.json`);
     assert.equal(sneaky.headers.get('content-type'), 'text/html; charset=utf-8', 'no files outside the assets');
+    // an address that cannot be read is answered, and the server stays up
+    assert.equal((await fetch(`${base}//`)).status, 400);
+    assert.equal((await fetch(`${base}/some/path`, { headers: { 'X-Forwarded-Host': 'paused.localhost' } })).status, 503, 'still answering');
   } finally {
     s.close();
   }

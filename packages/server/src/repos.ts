@@ -9,6 +9,7 @@ import { rename } from 'node:fs/promises';
 import { createServer, type Server } from 'node:http';
 import { join } from 'node:path';
 import { promisify } from 'node:util';
+import { assertNoGitInside } from './checks.js';
 import { config } from './config.js';
 import { secrets } from './secrets.js';
 
@@ -47,6 +48,8 @@ export interface CommitInput { name: string; srcDir: string; author: { name: str
 
 /** Stores the content of srcDir as the new version of the app (deleted files are removed). Returns the commit sha. */
 export async function commitTree(i: CommitInput): Promise<{ sha: string; changed: boolean }> {
+  // Second lock, at the point where git reads the files: a repository inside them would be obeyed by git.
+  await assertNoGitInside(i.srcDir);
   const gitDir = repoDir(i.name);
   if (!repoExists(i.name)) {
     mkdirSync(reposDir(), { recursive: true });
@@ -113,9 +116,11 @@ function sameKey(a: string, b: string) {
 /** Starts the read-only git server (clone/fetch only, never push). */
 export function startGitServer(port = config.gitPort): Server {
   const server = createServer((req, res) => {
-    const url = new URL(req.url ?? '/', 'http://x');
-    const m = /^\/git\/([A-Za-z0-9_-]+)\/([a-z0-9-]+)\.git(\/.*)$/.exec(url.pathname);
     const deny = (code: number, msg: string) => { res.writeHead(code, { 'Content-Type': 'text/plain' }); res.end(msg); };
+    // An address that cannot be read (for example "//") gets an answer: an error thrown here would stop the whole server.
+    let url: URL;
+    try { url = new URL(req.url ?? '/', 'http://x'); } catch { return deny(400, 'Bad request'); }
+    const m = /^\/git\/([A-Za-z0-9_-]+)\/([a-z0-9-]+)\.git(\/.*)$/.exec(url.pathname);
     if (!m || !NAME_RE.test(m[2]) || !sameKey(m[1], readKey(m[2])) || !repoExists(m[2])) return deny(404, 'Not found');
     const [, , name, rest] = m;
     const service = url.searchParams.get('service');
@@ -137,6 +142,8 @@ export function startGitServer(port = config.gitPort): Server {
         REMOTE_ADDR: req.socket.remoteAddress ?? '',
       },
     });
+    // git may close its input before the request is over (a body it refuses): without a listener that error stops the server
+    cgi.stdin.on('error', () => {});
     req.pipe(cgi.stdin);
     let head = Buffer.alloc(0), headersDone = false;
     cgi.stdout.on('data', (chunk: Buffer) => {

@@ -1,6 +1,7 @@
 {
   "name": "@apprua/mcp",
-  "version": "1.0.0",
+  "version": "1.0.1",
+  "mcpName": "io.github.apprua/apprua",
   "description": "Apprua connector for AI apps (MCP): publish the apps you build with AI on your own Apprua server, from Claude, Codex, Cursor, VS Code and any app that supports MCP.",
   "author": "The Apprua authors",
   "license": "AGPL-3.0-only",

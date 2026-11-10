@@ -56,9 +56,9 @@ sudo APPRUA_PROFILE=team APPRUA_NETWORK=internet APPRUA_DOMAIN=apps.yourcompany.
 
 It takes **5 to 15 minutes**. At the end the installer prints the portal address and a **setup code** (for example `K7QM-2XPA-9TRB`). Copy it: it is needed once and stops anyone else from taking over a fresh Apprua. It is also in `/root/.apprua/apprua.env`.
 
-The installer downloads Apprua ready to run (an image for each version): nothing is compiled on the server.
+The installer downloads Apprua ready to run (an image for each version): nothing is compiled on the server (only if that download fails, the installer builds Apprua from the code in the folder).
 
-**Updating:** from the folder you downloaded Apprua to, download the latest version again with the first command and run `sudo bash install/install.sh` again, with no options: your choices are saved, and so are apps and data. What is new in each version is in the [release notes](https://github.com/apprua/apprua/releases).
+**Updating:** go to the folder that holds the `apprua` folder (the one where you ran the first command), download the latest version again with that command and run `sudo bash install/install.sh` again, with no options: your choices are saved, and so are apps and data. What is new in each version is in the [release notes](https://github.com/apprua/apprua/releases).
 
 If you prefer to start from the code, use `git clone https://github.com/apprua/apprua`: then the installer builds Apprua on the server, and `git pull` updates it.
 
@@ -87,7 +87,7 @@ Administrators see every app of everyone, can change an app's owner, pause it, b
 - **The engine's panel is closed to the network** (ports 8000, 6001 and 6002), even though Docker usually opens ports past the firewall. To open it from your PC use a tunnel: `ssh -L 8000:localhost:8000 user@server`, then `http://localhost:8000`. **Settings > The engine (for experts)** shows the command for the password.
 - **A sign-in stands in front of every app**: without an account nothing opens, unless the owner chooses *Anyone, no sign-in*.
 - **Every app stays in its own lane**: an app can answer visits and reach the internet, but it cannot connect directly to the other apps (only through their address, past the sign-in), nor to Apprua, the engine, its database or the server itself. A small service, `apprua-guard`, keeps this up to date as apps start and stop. Apps can still reach the office network, if they need it.
-- **Publications are checked**: if a folder contains passwords, keys or `.env` files, Apprua refuses it and explains how to move those values into the app's secrets.
+- **Publications are checked**: if a folder contains keys in the common formats (API keys, private keys) or `.env` files, Apprua refuses it and explains how to move those values into the app's secrets. It catches the usual mistakes; it cannot recognise a password written in the code.
 - **Every action is logged** (who published what, who changed a secret, who paused an app).
 
 ## 6. Backups

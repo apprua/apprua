@@ -18,6 +18,7 @@ export function checkName(name: string): void {
 export async function extractArchive(archive: string, dest: string): Promise<void> {
   let total = 0, files = 0;
   let tooBig: HttpError | null = null;
+  let gitInside = false;
   const problems: string[] = [];
   // The filter never throws: an error thrown inside tar's stream escapes the request and stops the whole server.
   // Past a limit every other entry is skipped (nothing more is written) and the error comes after the stream ends.
@@ -30,6 +31,7 @@ export async function extractArchive(archive: string, dest: string): Promise<voi
       if (tooBig) return false;
       const e = entry as tar.ReadEntry;
       if (path.split('/').includes('..') || path.startsWith('/')) { problems.push(`unsafe path ${path}`); return false; }
+      if (path.split('/').some(isGitName)) { gitInside = true; return false; }
       if (e.type !== 'File' && e.type !== 'Directory' && e.type !== 'OldFile' && e.type !== 'ContiguousFile') {
         problems.push(`${path} (${e.type}) skipped`); return false;
       }
@@ -41,6 +43,23 @@ export async function extractArchive(archive: string, dest: string): Promise<voi
   });
   if (tooBig) throw tooBig;
   if (problems.some((p) => p.startsWith('unsafe'))) throw new HttpError(400, 'Archive contains unsafe paths.', problems);
+  if (gitInside) throw gitInsideError();
+  await assertNoGitInside(dest);
+}
+
+// A ".git" entry (a folder, or a file that points to one) makes the folder around it a git repository of its own.
+// The code archive runs git over the extracted files, and git obeys the settings of a repository it finds inside
+// them, commands included: so no publication may bring one, at any depth. The connector never sends ".git".
+const isGitName = (segment: string) => segment.toLowerCase() === '.git';
+const gitInsideError = () => new HttpError(400,
+  'The archive contains a ".git" folder or file. Remove it and publish again: Apprua keeps the history of the app by itself.');
+
+/** Refuses a folder that holds a ".git" entry at any depth (checked on the files themselves, whatever brought them). */
+export async function assertNoGitInside(root: string): Promise<void> {
+  for (const d of await readdir(root, { withFileTypes: true })) {
+    if (isGitName(d.name)) throw gitInsideError();
+    if (d.isDirectory()) await assertNoGitInside(join(root, d.name));
+  }
 }
 
 export async function listFiles(root: string): Promise<string[]> {

@@ -104,7 +104,7 @@ The published apps run code written by AI, so each one is kept apart (`install/a
 |---|---|---|
 | `AUTH_MODE` | `local` | `local`: accounts with email + password. `proxy`: trust identity headers from a login proxy (e.g. oauth2-proxy with any OIDC provider: Microsoft, Google, Keycloak…) |
 | `INITIAL_ADMIN_EMAIL` / `INITIAL_ADMIN_PASSWORD` | (none) | Creates the first administrator at start, skipping the first-run setup (for automated installs) |
-| `SETUP_CODE` | (none) | One-time code asked by the first-run setup page. The installer sets it on servers (team profile), so nobody else can take over a fresh install |
+| `SETUP_CODE` | (none) | One-time code asked by the first-run setup page. The installer sets it whenever Apprua can be reached from the network (local network or internet, any profile), so nobody else can take over a fresh install |
 | `AUTH_PROXY_SECRET` | (none) | `proxy` mode: shared secret the proxy must send (header `AUTH_PROXY_SECRET_HEADER`, default `x-apprua-proxy-secret`) |
 | `AUTH_EMAIL_HEADER`, `AUTH_NAME_HEADER`, `AUTH_GROUPS_HEADER` | oauth2-proxy names | `proxy` mode: header names |
 | `AUTH_ADMIN_GROUP` | (none) | `proxy` mode: members of this group are administrators |

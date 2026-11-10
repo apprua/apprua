@@ -77,8 +77,8 @@ Apprua usa al massimo la memoria che gli hai dato (di solito metà di quella del
 
 Nella pagina di accesso clicca **Password dimenticata?**.
 
-- **Se Apprua può mandare email** (sui server, se è stata configurata), scrivi la tua email: arriva un link valido un'ora per sceglierne una nuova.
-- **Altrimenti chiedi a un amministratore:** in **Impostazioni**, accanto alla tua email, c'è **Nuova password**. Apprua ne crea una e la mostra una volta sola all'amministratore, che te la comunica di persona o per telefono.
+- **Se Apprua può mandare email** (sui server, se è stata configurata), scrivi la tua email: arriva un link valido un'ora per sceglierne una nuova. Anche la chiave personale smette di funzionare: dopo l'accesso creane una nuova e mettila nella tua app AI.
+- **Altrimenti chiedi a un amministratore:** in **Impostazioni**, accanto alla tua email, c'è **Nuova password**. Apprua ne crea una e la mostra una volta sola all'amministratore, che te la comunica di persona o per telefono. Anche la chiave personale smette di funzionare: dopo l'accesso creane una nuova e mettila nella tua app AI.
 - **Se l'amministratore sei tu**, lancia uno di questi comandi dalla cartella di Apprua. Scrive una nuova password: entra con quella, poi cambiala in **Il tuo account**.
 
 Sul PC Windows:

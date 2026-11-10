@@ -85,9 +85,11 @@ test('forgot your password: a one-time link that works for an hour', () => {
   assert.throws(() => auth.useResetToken(token, 'short'), /err\.password_short/);
   assert.equal(auth.resetTokenEmail(token), 'bo@example.test', 'a refused password does not use up the link');
   const other = auth.createResetToken('bo@example.test')!;
+  auth.issueToken('bo@example.test', 'test');
   assert.equal(auth.useResetToken(token, 'from-the-link-4'), 'bo@example.test');
   assert.ok(auth.verifyPassword('from-the-link-4', db.getUser('bo@example.test')!.password_hash));
   assert.throws(() => auth.useResetToken(token, 'again-and-again-5'), /err\.reset_invalid/, 'used once');
+  assert.equal(db.getUser('bo@example.test')!.token_hash, null, 'a lost password ends the personal key too');
   assert.equal(auth.resetTokenEmail(other), null, 'the other links of the account stop working too');
 
   const late = auth.createResetToken('bo@example.test')!;
@@ -117,7 +119,9 @@ test('guessing passwords: after 10 wrong attempts the address waits, also with t
 test('a new password ends a "forgot your password?" link asked for before; an absurd email is refused', async () => {
   auth.createLocalUser('di@example.test', null, 'di-password-123', 'user', 'test');
   const token = auth.createResetToken('di@example.test')!;
+  auth.issueToken('di@example.test', 'test');
   auth.setPassword('di@example.test', 'di-password-456', 'test');
+  assert.ok(db.getUser('di@example.test')!.token_hash, 'a password changed without losing it keeps the personal key');
   assert.throws(() => auth.useResetToken(token, 'di-password-789'));
   assert.equal((await post('/login', { email: 'x'.repeat(300), password: 'y' })).statusCode, 400);
 });
