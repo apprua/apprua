@@ -21,3 +21,21 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+
+  # Checks that need no build: the installers read as valid shell without the usual mistakes, and no library in use
+  # has a known serious problem. Tools already on the runner or in npm: nothing else is downloaded.
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: The installers (shellcheck)
+        run: |
+          for f in install/*.sh; do bash -n "$f"; done
+          shellcheck -S warning install/*.sh
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: 24
+      - name: Libraries with known problems (npm audit)
+        run: npm audit --audit-level=high

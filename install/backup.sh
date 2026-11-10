@@ -68,6 +68,7 @@ apprua_start() { [ -z "$STOPPED" ] || docker start $STOPPED >/dev/null 2>&1 || t
 backup() {
   command -v docker >/dev/null || die "Docker is not installed: nothing to copy"
   mkdir -p "$DIR" && chmod 700 "$DIR"
+  # shellcheck disable=SC2155  # date cannot fail here
   local file="$DIR/apprua-$(date +%Y-%m-%d-%H%M).tar.gz"
   local need free vols v
   vols=$(apprua_volumes)
@@ -122,6 +123,7 @@ restore() {
   fi
   # Docker volumes that are not in the copy belong to other programs on this server: they are left alone, but say so
   local others
+  # shellcheck disable=SC2010  # names of Docker volumes: no spaces or odd characters
   others=$(comm -23 <(ls -1 /var/lib/docker/volumes 2>/dev/null | grep -vxE 'metadata.db|backingFsBlockDev' | sort) \
                     <(printf '%s\n' "$vols") | tr '\n' ' ')
   # a copy made on a Coolify shared with other projects has no engine in it (no data/coolify)
@@ -153,6 +155,7 @@ restore() {
   # only the volumes in the copy are replaced; only the three parts of a copy are taken from it (nothing else on /)
   local v parts=()
   while read -r v; do [ -n "$v" ] && rm -rf "/var/lib/docker/volumes/$v"; done <<<"$vols"
+  # shellcheck disable=SC2115  # v comes from the two fixed names of this line, never empty
   for v in data/coolify root/.apprua; do if grep -q "^$v/" "$list"; then rm -rf "/$v"; parts+=("$v"); fi; done
   parts+=(var/lib/docker/volumes)
   tar -C / -xzf "$file" "${parts[@]}"

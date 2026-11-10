@@ -79,8 +79,8 @@ export async function listFiles(root: string): Promise<string[]> {
 const SECRET_FILE_RE = [
   /(^|\/)\.env(\..+)?$/i,
   /(^|\/)id_(rsa|dsa|ecdsa|ed25519)$/,
-  /\.(pem|key|p12|pfx|keystore|jks)$/i,
-  /(^|\/)\.npmrc$/,
+  /\.(pem|key|p12|pfx|keystore|jks|ppk)$/i,
+  /(^|\/)\.(npmrc|netrc|pypirc|git-credentials)$/,
   /(^|\/)credentials(\.json)?$/i,
 ];
 const ALLOWED_ENV_EXAMPLE = /(^|\/)\.env\.(example|sample|template)$/i;
@@ -88,12 +88,18 @@ const SECRET_CONTENT_RE: { re: RegExp; what: string }[] = [
   { re: /-----BEGIN (RSA |EC |DSA |OPENSSH |ENCRYPTED )?PRIVATE KEY-----/, what: 'private key' },
   { re: /\bsk-ant-[A-Za-z0-9_-]{20,}/, what: 'Anthropic API key' },
   { re: /\bsk-(?!ant-)(proj-)?[A-Za-z0-9_-]{32,}/, what: 'OpenAI-style API key' },
-  { re: /\bAKIA[0-9A-Z]{16}\b/, what: 'AWS access key' },
+  { re: /-----BEGIN PGP PRIVATE KEY BLOCK-----/, what: 'private key' },
+  { re: /\b(AKIA|ASIA)[0-9A-Z]{16}\b/, what: 'AWS access key' },
   { re: /\bgh[pousr]_[A-Za-z0-9]{36,}\b/, what: 'GitHub token' },
   { re: /\bgithub_pat_[A-Za-z0-9_]{50,}\b/, what: 'GitHub token' },
   { re: /\bxox[abprs]-[A-Za-z0-9-]{10,}/, what: 'Slack token' },
   { re: /\bAIza[0-9A-Za-z_-]{35}\b/, what: 'Google API key' },
   { re: /\bapr_[A-Za-z0-9_-]{40,}/, what: 'Apprua personal token' },
+  { re: /\b[sr]k_live_[A-Za-z0-9]{20,}/, what: 'Stripe key' },
+  { re: /\bglpat-[A-Za-z0-9_-]{20,}/, what: 'GitLab token' },
+  { re: /\bnpm_[A-Za-z0-9]{36}\b/, what: 'npm token' },
+  { re: /\bSG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}\b/, what: 'SendGrid key' },
+  { re: /\bhf_[A-Za-z0-9]{34,}\b/, what: 'Hugging Face token' },
 ];
 
 export interface Finding { file: string; line?: number; what: string }

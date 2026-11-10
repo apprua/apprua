@@ -53,6 +53,18 @@ test('the state file of a folder: a name or a version that are not real ones are
   assert.deepEqual(readState(mkdtempSync(join(tmpdir(), 'st-'))), {});
 });
 
+test('files that are keys by their name stop the publication before anything is sent', async () => {
+  const { keyFiles, listPublishable } = await import('./pack-under-test.mjs');
+  assert.deepEqual(keyFiles(['index.html', 'certs/server.pem', 'deploy/id_ed25519', 'a/credentials.json', 'x.KEY', 'keyboard.js', 'docs/pem.md']),
+    ['certs/server.pem', 'deploy/id_ed25519', 'a/credentials.json', 'x.KEY']);
+  const d = mkdtempSync(join(tmpdir(), 'kf-'));
+  for (const f of ['index.html', 'certs/server.key']) { mkdirSync(join(d, f, '..'), { recursive: true }); writeFileSync(join(d, f), 'x'); }
+  // (packFolder itself refuses a temporary folder on Windows, where it sits inside AppData: the two halves are tried apart)
+  assert.deepEqual(keyFiles((await listPublishable(d)).files), ['certs/server.key']);
+  writeFileSync(join(d, '.gitignore'), '*.key\n');
+  assert.deepEqual(keyFiles((await listPublishable(d)).files), [], 'ignored by the project: published without it');
+});
+
 test('packing: .gitignore in subfolders, keys of the PC never, folders that are not a project refused', async () => {
   const { listPublishable, checkFolder } = await import('./pack-under-test.mjs');
   const d = mkdtempSync(join(tmpdir(), 'pk-'));

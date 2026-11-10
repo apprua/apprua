@@ -90,12 +90,20 @@ export async function listPublishable(root: string): Promise<{ files: string[]; 
   return { files: files.sort(), skippedLarge };
 }
 
+/** Files that are keys by their name (the same names the server refuses). */
+const KEY_FILE_RE = [/(^|\/)id_(rsa|dsa|ecdsa|ed25519)$/, /\.(pem|key|p12|pfx|keystore|jks|ppk)$/i, /(^|\/)credentials(\.json)?$/i];
+export const keyFiles = (files: string[]) => files.filter((f) => KEY_FILE_RE.some((r) => r.test(f)));
+
 /** The archive goes in a new private folder of its own (remove the whole folder when done: see cleanup). */
 export async function packFolder(root: string): Promise<PackResult> {
   if (!existsSync(root) || !statSync(root).isDirectory()) throw new Error(`Folder not found: ${root}`);
   checkFolder(root);
   const { files, skippedLarge } = await listPublishable(root);
   if (!files.length) throw new Error('Nothing to publish in this folder (everything is ignored or empty).');
+  // the server would refuse them: stopping here, nothing private leaves the PC
+  const keys = keyFiles(files);
+  if (keys.length) throw new Error(`Publication stopped: the folder contains files that look like keys (${keys.slice(0, 10).join(', ')}). ` +
+    'Nothing was sent. Add them to .gitignore, and give the app its values with set_env instead.');
   const dir = mkdtempSync(join(tmpdir(), 'apprua-'));
   const archive = join(dir, 'app.tar.gz');
   try {

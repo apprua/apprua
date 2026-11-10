@@ -138,6 +138,23 @@ test('secret scan finds files and keys, ignores .env.example', async () => {
   assert.match(checks.secretsError(found).message, /set_env/);
 });
 
+test('secret scan: more formats of keys, and names that only look like them', async () => {
+  const d = await folder({
+    'pay.js': `const s = "sk_live_${'a'.repeat(24)}";`,
+    'ci.yml': `token: glpat-${'b'.repeat(20)}`,
+    'pub.sh': `export T=npm_${'c'.repeat(36)}`,
+    'mail.py': `key = "SG.${'d'.repeat(22)}.${'e'.repeat(43)}"`,
+    'ai.py': `hf = "hf_${'f'.repeat(34)}"`,
+    'tmp.txt': `ASIA${'G'.repeat(16)}`,
+    'me.asc': '-----BEGIN PGP PRIVATE KEY BLOCK-----',
+    'putty/server.ppk': 'x', '.netrc': 'x',
+    'ok.js': 'const sk_live = 1; const npm_package = "x"; const hf_model = "bert"; // "ASIAN" and "SG.Paris" are words',
+    'ok.md': 'pk_live_ is the public key of Stripe; sk_test_ keys are not secrets of production',
+  });
+  const found = await checks.scanSecrets(d, await checks.listFiles(d));
+  assert.deepEqual(found.map((f) => f.file).sort(), ['.netrc', 'ai.py', 'ci.yml', 'mail.py', 'me.asc', 'pay.js', 'pub.sh', 'putty/server.ppk', 'tmp.txt']);
+});
+
 test('warnings for apps made inside an AI chat', async () => {
   const d = await folder({ 'index.html': '<script>window.storage.set("a",1); fetch("https://api.anthropic.com/v1/messages")</script>' });
   const w = await checks.claudeWarnings(d, await checks.listFiles(d));

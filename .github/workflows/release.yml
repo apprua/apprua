@@ -24,10 +24,12 @@ jobs:
       IMAGE: ghcr.io/${{ github.repository }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false   # nothing here pushes with git
+      # no cache of libraries in a release: what is published is built from a fresh download, checked by the lock file
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 24
-          cache: npm
           registry-url: https://registry.npmjs.org
 
       - name: Version, build and tests
@@ -50,6 +52,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: The Apprua image
+        id: image
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
@@ -66,10 +69,16 @@ jobs:
             org.opencontainers.image.version=${{ steps.v.outputs.version }}
             org.opencontainers.image.licenses=AGPL-3.0-only
 
+      # The installer of the release downloads exactly the image built here: its name and its fingerprint
+      # (name:version@sha256:...). An image put under the same name later would not be taken for it.
       - name: Files of the release
+        env:
+          VERSION: ${{ steps.v.outputs.version }}
+          DIGEST: ${{ steps.image.outputs.digest }}
         run: |
-          node scripts/release.mjs files "${{ steps.v.outputs.version }}" "$IMAGE:${{ steps.v.outputs.version }}"
-          node scripts/release.mjs notes "${{ steps.v.outputs.version }}" > release/NOTES.md
+          case "$DIGEST" in sha256:*) ;; *) echo "The image has no fingerprint: not releasing."; exit 1 ;; esac
+          node scripts/release.mjs files "$VERSION" "$IMAGE:$VERSION@$DIGEST"
+          node scripts/release.mjs notes "$VERSION" > release/NOTES.md
 
       # The release comes before npm: a problem on npm must not leave the fix without its files.
       # Both steps can be run again: what is already published is left as it is (the files people downloaded

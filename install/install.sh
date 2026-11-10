@@ -250,9 +250,22 @@ if [ -f /data/coolify/source/.env ] || docker ps -a --format '{{.Names}}' 2>/dev
   fi
 else
   say "$(L "Installo Coolify ${COOLIFY_VERSION:-(ultima versione)}, il motore che costruisce e fa girare le app. Ci vuole qualche minuto." "Installing Coolify ${COOLIFY_VERSION:-(newest)} (the engine that builds and runs the apps). It takes a few minutes.")"
-  coolify_install
-  # remembered: this Coolify is Apprua's own, so its first user must be Apprua's (also when the installer is run again)
+  # A machine below what the guide asks for still installs, but says so first (apps that stop for no clear reason
+  # are usually this). Not in WSL: there the Windows installer has its own checks.
+  if ! grep -qi microsoft /proc/version 2>/dev/null; then
+    mem_mb=$(awk '/^MemTotal:/ {print int($2/1024)}' /proc/meminfo 2>/dev/null || echo 0)
+    disk_gb=$(df -Pk / 2>/dev/null | awk 'NR==2 {print int($4/1048576)}' || echo 0)
+    if [ "${mem_mb:-0}" -gt 0 ] && [ "$mem_mb" -lt 3500 ]; then
+      info "$(L "Attenzione: questa macchina ha circa $mem_mb MB di memoria; la guida ne chiede almeno 4 GB. L'installazione continua, ma le app potrebbero fermarsi." "Note: this machine has about $mem_mb MB of memory; the guide asks for at least 4 GB. The installation goes on, but apps may stop.")"
+    fi
+    if [ "${disk_gb:-0}" -gt 0 ] && [ "$disk_gb" -lt 15 ]; then
+      info "$(L "Attenzione: su questa macchina restano circa $disk_gb GB di disco; la guida ne chiede 30. L'installazione continua, ma lo spazio può finire presto." "Note: this machine has about $disk_gb GB of free disk; the guide asks for 30. The installation goes on, but the space may run out soon.")"
+    fi
+  fi
+  # remembered before installing: this Coolify is Apprua's own, so its first user must be Apprua's, also when the
+  # installation stops halfway and the installer is run again (a stranger could have registered in between)
   setv COOLIFY_BY_APPRUA 1
+  coolify_install
 fi
 
 # WSL only: all the Linux of the PC share one network. A Docker in another Linux can leave bridges with the same
@@ -531,10 +544,16 @@ fi
 
 say "$(L 'Avvio Apprua' 'Starting Apprua')"
 docker rm -f apprua >/dev/null 2>&1 || true
+# What opens something (the token of the engine, the setup code, the first password) goes to Docker in a file only
+# root can read, not on the command line, where every user of the machine could read it while the command runs.
+RUN_ENV="$STATE_DIR/apprua-run.env"
+( umask 077; printf 'COOLIFY_TOKEN=%s\n' "$TOKEN" > "$RUN_ENV" )
+# Apprua needs no special power of the system: it runs with none, and cannot gain any
 args=(-d --name apprua --restart unless-stopped --network coolify -v apprua-data:/data
+  --cap-drop ALL --security-opt no-new-privileges --env-file "$RUN_ENV"
   -e "APPRUA_PROFILE=$PROFILE" -e "APPRUA_NETWORK=$NETWORK" -e "BASE_DOMAIN=$DOMAIN" -e "PUBLIC_URL=$PUBLIC_URL"
   -e "APPRUA_HTTPS=$HTTPS" -e "APP_SCHEME=$SCHEME" -e "APPRUA_LAN_IP=$LAN_IP"
-  -e COOLIFY_API_URL=http://coolify:8080 -e "COOLIFY_TOKEN=$TOKEN"
+  -e COOLIFY_API_URL=http://coolify:8080
   -e "COOLIFY_PROJECT_UUID=$PROJECT_UUID" -e "COOLIFY_SERVER_UUID=$SERVER_UUID"
   -e GIT_INTERNAL_URL=http://apprua:3001 -e "APPRUA_GATE=$GATE" -e "APPRUA_COOLIFY_TESTED=$COOLIFY_VERSION")
 # after install/backup.sh --restore: publish again the apps that were online (once: a new value each restore)
@@ -551,9 +570,10 @@ fi
 # What apprua-guard writes for the portal (the apps that ran out of memory), read-only
 mkdir -p /var/lib/apprua && args+=(-v /var/lib/apprua:/apprua-host:ro)
 if [ -n "$(getv INITIAL_ADMIN_PASSWORD)" ]; then
-  args+=(-e "INITIAL_ADMIN_EMAIL=$(getv INITIAL_ADMIN_EMAIL)" -e "INITIAL_ADMIN_PASSWORD=$(getv INITIAL_ADMIN_PASSWORD)")
+  args+=(-e "INITIAL_ADMIN_EMAIL=$(getv INITIAL_ADMIN_EMAIL)")
+  printf 'INITIAL_ADMIN_PASSWORD=%s\n' "$(getv INITIAL_ADMIN_PASSWORD)" >> "$RUN_ENV"
 elif [ -n "$(getv SETUP_CODE)" ]; then
-  args+=(-e "SETUP_CODE=$(getv SETUP_CODE)")
+  printf 'SETUP_CODE=%s\n' "$(getv SETUP_CODE)" >> "$RUN_ENV"
 fi
 if [ "$NETWORK" != local ]; then
   # the portal at apprua.<domain>, through the same proxy as the apps
@@ -577,12 +597,12 @@ if [ "$IMAGE" = apprua:local ]; then args+=(-e APPRUA_CONNECTOR_SOURCE=server); 
 # the request log of the portal (with the addresses of the visitors) is kept small: at most 5 files of 10 MB
 [ "$(docker info --format '{{.LoggingDriver}}' 2>/dev/null)" = json-file ] && args+=(--log-opt max-size=10m --log-opt max-file=5)
 docker run "${args[@]}" "$IMAGE" >/dev/null
-for i in $(seq 1 30); do docker exec apprua node -e "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" 2>/dev/null && break; sleep 1; done
+for _ in $(seq 1 30); do docker exec apprua node -e "fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))" 2>/dev/null && break; sleep 1; done
 # The proxy shows the portal at apprua.<domain> only once the container is "healthy" (30-40 s after it starts):
 # wait for it, so "Apprua is ready" is true when it is printed (seen on a test server: "No app here" meanwhile)
 if [ "$NETWORK" != local ]; then
   if [ "$HTTPS" != off ]; then pp=443; ps=https; else pp=80; ps=http; fi
-  for i in $(seq 1 60); do
+  for _ in $(seq 1 60); do
     c=$(curl -sk -o /dev/null -m 5 -w '%{http_code}' --resolve "apprua.$DOMAIN:$pp:127.0.0.1" "$ps://apprua.$DOMAIN/healthz" || true)
     [ "$c" = 200 ] && break
     sleep 2
@@ -629,6 +649,13 @@ else
   say "$(L 'Tutto pronto: Apprua è in funzione' 'Apprua is ready')"
   info "$(L "Apri: $PUBLIC_URL" "Open: $PUBLIC_URL")"
   if [ "$NETWORK" = lan ]; then info "$(L "Su questa macchina anche: http://localhost:$PORT" "On this machine also: http://localhost:$PORT")"; fi
+  # "local network" on a machine whose address is a public one (a rented server): portal and apps answer from the internet
+  if [ "$NETWORK" = lan ] && [ -n "$LAN_IP" ]; then
+    case "$LAN_IP" in
+      10.*|192.168.*|172.1[6-9].*|172.2[0-9].*|172.3[01].*|169.254.*|100.6[4-9].*|100.[7-9][0-9].*|100.1[01][0-9].*|100.12[0-7].*|127.*) ;;
+      *) info "$(L "Attenzione: l'indirizzo di questa macchina ($LAN_IP) è pubblico. Con \"rete locale\" il portale e le app rispondono a chiunque raggiunga quell'indirizzo, anche da internet$([ "$HTTPS" = off ] && printf ', e senza HTTPS'). Su un server in affitto usa APPRUA_NETWORK=internet con un dominio, oppure chiudi le porte 80 e 443 nel firewall del fornitore." "Note: the address of this machine ($LAN_IP) is a public one. With \"local network\" the portal and the apps answer to whoever reaches that address, also from the internet$([ "$HTTPS" = off ] && printf ', and without HTTPS'). On a rented server use APPRUA_NETWORK=internet with a domain, or close ports 80 and 443 in the firewall of the provider.")" ;;
+    esac
+  fi
   if [ "$FIRST_RUN" = 1 ] && [ -n "$(getv INITIAL_ADMIN_PASSWORD)" ]; then
     info "Administrator: $(getv INITIAL_ADMIN_EMAIL)   password: $(getv INITIAL_ADMIN_PASSWORD)"
     info "(also saved in $ENV_FILE; change it after the first sign-in)"

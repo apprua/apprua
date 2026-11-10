@@ -34,6 +34,16 @@ Connect to the server and download the latest version:
 curl -fsSL https://github.com/apprua/apprua/releases/latest/download/apprua.tar.gz | tar -xz && cd apprua
 ```
 
+If you prefer to check the download before opening it, use these three lines instead: the second file holds the fingerprints of the release, and the third line stops if the archive does not match.
+
+```bash
+curl -fsSLO https://github.com/apprua/apprua/releases/latest/download/apprua.tar.gz
+curl -fsSLO https://github.com/apprua/apprua/releases/latest/download/SHA256SUMS.txt
+sha256sum -c --ignore-missing SHA256SUMS.txt && tar -xzf apprua.tar.gz && cd apprua
+```
+
+The installer inside the archive then downloads the image of Apprua by its fingerprint, not only by its name: another image put under the same name is not taken for it.
+
 Then **one** of these commands.
 
 Local network:

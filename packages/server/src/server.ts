@@ -53,6 +53,9 @@ app.setErrorHandler((err, req, reply) => {
 app.addHook('onSend', async (_req, reply) => {
   reply.header('X-Frame-Options', 'DENY');
   reply.header('Content-Security-Policy', "frame-ancestors 'none'");
+  // a browser never guesses the type of what Apprua sends, and never tells other sites which page a link came from
+  reply.header('X-Content-Type-Options', 'nosniff');
+  reply.header('Referrer-Policy', 'same-origin');
 });
 
 app.get('/healthz', async () => ({ ok: true, version: VERSION }));
