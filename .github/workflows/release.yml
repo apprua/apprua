@@ -2,9 +2,10 @@
 #   1. the tag must match the version of the code; build and tests must pass
 #   2. the Apprua image, for Intel/AMD and ARM servers: ghcr.io/apprua/apprua:0.2.0, :0.2 and :latest
 #   3. the files of the release (scripts/release.mjs): apprua.zip, apprua.tar.gz, apprua.mcpb, SHA256SUMS.txt
-#   4. the connector on npm (@apprua/mcp), only if the repository variable NPM_PUBLISH is "true": trusted publishing
+#   4. the GitHub release, with the text of its CHANGELOG section
+#   5. the connector on npm (@apprua/mcp), only if the repository variable NPM_PUBLISH is "true": trusted publishing
 #      (GitHub proves to npm who it is, no token to keep). One-time setup in RELEASING.md
-#   5. the GitHub release, with the text of its CHANGELOG section
+# If a step fails, fix the cause and run the job again: what was already published is left as it is.
 name: Release
 
 on:
@@ -70,16 +71,21 @@ jobs:
           node scripts/release.mjs files "${{ steps.v.outputs.version }}" "$IMAGE:${{ steps.v.outputs.version }}"
           node scripts/release.mjs notes "${{ steps.v.outputs.version }}" > release/NOTES.md
 
-      - name: The connector on npm
-        run: |
-          if [ "${{ vars.NPM_PUBLISH }}" != "true" ]; then echo "NPM_PUBLISH is not true: the connector is not published on npm."; exit 0; fi
-          npm install -g npm@11.21.1   # trusted publishing needs 11.5.1 or newer
-          npm publish --workspace @apprua/mcp --access public ${{ steps.v.outputs.pre == 'true' && '--tag next' || '' }}
-
+      # The release comes before npm: a problem on npm must not leave the fix without its files.
+      # Both steps can be run again: what is already published is left as it is (the files people downloaded
+      # keep their fingerprints, npm never takes the same version twice).
       - name: The GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then echo "The release $GITHUB_REF_NAME is already there: left as it is."; exit 0; fi
           gh release create "$GITHUB_REF_NAME" release/apprua.zip release/apprua.tar.gz release/apprua.mcpb release/SHA256SUMS.txt \
             --title "Apprua ${{ steps.v.outputs.version }}" --notes-file release/NOTES.md \
             ${{ steps.v.outputs.pre == 'true' && '--prerelease' || '' }}
+
+      - name: The connector on npm
+        run: |
+          if [ "${{ vars.NPM_PUBLISH }}" != "true" ]; then echo "NPM_PUBLISH is not true: the connector is not published on npm."; exit 0; fi
+          if npm view "@apprua/mcp@${{ steps.v.outputs.version }}" version >/dev/null 2>&1; then echo "This version of the connector is already on npm: left as it is."; exit 0; fi
+          npm install -g npm@11.21.1   # trusted publishing needs 11.5.1 or newer
+          npm publish --workspace @apprua/mcp --access public ${{ steps.v.outputs.pre == 'true' && '--tag next' || '' }}
