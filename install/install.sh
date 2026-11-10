@@ -302,7 +302,7 @@ if grep -qi microsoft /proc/version 2>/dev/null && command -v ip >/dev/null; the
   fi
 fi
 say "$(L 'Aspetto che Coolify sia pronto' 'Waiting for Coolify')"
-for i in $(seq 1 120); do curl -fs -m 5 "$COOLIFY_LOCAL/api/health" >/dev/null 2>&1 && break; sleep 2; done
+for _ in $(seq 1 120); do curl -fs -m 5 "$COOLIFY_LOCAL/api/health" >/dev/null 2>&1 && break; sleep 2; done
 curl -fs -m 5 "$COOLIFY_LOCAL/api/health" >/dev/null || die "Coolify does not answer on $COOLIFY_LOCAL"
 info "Coolify $(curl -fs -m 5 "$COOLIFY_LOCAL/api/v1/version" -H 'Accept: application/json' 2>/dev/null || echo ready)"
 
@@ -337,7 +337,7 @@ secure_coolify() {
     }' 2>&1 | tail -1
 }
 R=""
-for i in $(seq 1 45); do
+for _ in $(seq 1 45); do
   R=$(secure_coolify)
   case "$R" in *created|*secured|*foreign) break ;; esac
   sleep 2
