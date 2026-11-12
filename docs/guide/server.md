@@ -44,6 +44,8 @@ sha256sum -c --ignore-missing SHA256SUMS.txt && tar -xzf apprua.tar.gz && cd app
 
 The installer inside the archive then downloads the image of Apprua by its fingerprint, not only by its name: another image put under the same name is not taken for it.
 
+To install the engine, the installer runs Coolify's own install script, downloaded from Coolify's site (`cdn.coollabs.io`) as root, as Coolify's guide does. Apprua chooses the version of Coolify but cannot vouch for that script: the installer says so and shows its fingerprint (SHA-256) before running it.
+
 Then **one** of these commands.
 
 Local network:

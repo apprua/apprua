@@ -227,9 +227,17 @@ COOLIFY_VERSION="${COOLIFY_VERSION:-4.6.0}"
 [ "$COOLIFY_VERSION" = latest ] && COOLIFY_VERSION=""
 coolify_install() {   # also upgrades an existing Coolify, keeping its data
   CP="$(getv COOLIFY_ADMIN_PASSWORD)"; [ -n "$CP" ] || { CP="$(rand 20)Aa1-"; setv COOLIFY_ADMIN_PASSWORD "$CP"; }
+  # Coolify's own install script, from Coolify's site, run as root (as Coolify's guide does): Apprua cannot vouch for
+  # it, so it says so, downloads it whole before running it, and writes its fingerprint (to compare or keep).
+  local script; script="$(mktemp)"
+  curl -fsSL https://cdn.coollabs.io/coolify/install.sh -o "$script" || { rm -f "$script"; die "$(L "non riesco a scaricare lo script di Coolify da cdn.coollabs.io" "cannot download Coolify's install script from cdn.coollabs.io")"; }
+  info "$(L "Lo script di installazione di Coolify viene dal sito di Coolify (cdn.coollabs.io) e gira come root: Apprua non lo controlla. Impronta SHA-256: $(sha256sum "$script" | cut -d' ' -f1)" \
+    "Coolify's install script comes from Coolify's site (cdn.coollabs.io) and runs as root: Apprua does not check it. SHA-256 fingerprint: $(sha256sum "$script" | cut -d' ' -f1)")"
   # Coolify only accepts a root password with upper and lower case, numbers and a symbol
-  curl -fsSL https://cdn.coollabs.io/coolify/install.sh | \
-    env AUTOUPDATE=false ROOT_USERNAME=admin ROOT_USER_EMAIL=admin@apprua.local ROOT_USER_PASSWORD="$CP" bash -s $COOLIFY_VERSION
+  local rc=0
+  env AUTOUPDATE=false ROOT_USERNAME=admin ROOT_USER_EMAIL=admin@apprua.local ROOT_USER_PASSWORD="$CP" bash "$script" $COOLIFY_VERSION || rc=$?
+  rm -f "$script"
+  return "$rc"
 }
 # Coolify already here, also when it is stopped right now (its settings or its container are there)
 if [ -f /data/coolify/source/.env ] || docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx coolify; then

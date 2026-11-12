@@ -44,6 +44,8 @@ sha256sum -c --ignore-missing SHA256SUMS.txt && tar -xzf apprua.tar.gz && cd app
 
 L'installer dentro l'archivio scarica poi l'immagine di Apprua con la sua impronta, non solo con il suo nome: un'altra immagine messa sotto lo stesso nome non viene scambiata per quella.
 
+Per installare il motore, l'installer esegue come root lo script di installazione di Coolify, scaricato dal sito di Coolify (`cdn.coollabs.io`), come fa la guida di Coolify. Apprua sceglie la versione di Coolify ma non può garantire quello script: l'installer lo dice e ne mostra l'impronta (SHA-256) prima di eseguirlo.
+
 Poi **uno** di questi comandi.
 
 Rete locale:
