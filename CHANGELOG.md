@@ -3,6 +3,76 @@
 Every release of Apprua, newest first. Each section is also the text of the release on GitHub.
 The version numbers follow [semantic versioning](https://semver.org): only a new major version (2.0) can change how things work; minor and patch versions (1.1, 1.0.1) keep it.
 
+## [1.1.0]
+
+**English**
+
+Apps can now know who is using them, and the rest of the security review of 10 November is done. Updating is recommended for every installation: run the installer again, as for any update (it keeps apps and data).
+
+New
+
+- **The app knows who is using it.** When the sign-in in front of the apps lets a request through, the app receives the email, the name and the role of the person (`X-Apprua-User`, `X-Apprua-User-Name`, `X-Apprua-Role`), so an app where several people change the same data can write "changed by", warn when two people change the same entry, or show who else is editing. The proxy removes these headers when a browser sends them. Every app also gets its own key (`APPRUA_APP_KEY`, set at every publication, and the header `X-Apprua-Key`): an app trusts the names only when the two match, so another app on the same machine cannot pass for someone else. The connector tells the AI to use them instead of building a login. An app published before 1.1 gets its key at its next publication. Details: [Who is using an app](docs/configuration.md#who-is-using-an-app). Asked by the first person who tried Apprua outside the project.
+
+Security
+
+- The limits on sign-in attempts and on "forgot your password?" can no longer be dodged from inside: only the engine's proxy may say which address a request came from. Before, an app or a build on the same machine could talk to Apprua directly with a new made-up address at every attempt.
+- The check on publications knows more kinds of keys (Stripe, GitLab, npm, SendGrid, Hugging Face, temporary AWS keys, PGP private keys, `.ppk`, `.netrc`, `.pypirc`, `.git-credentials`). The connector stops files that are keys by their name (`*.pem`, `*.key`, `id_rsa`, `credentials.json` and the like) before anything leaves the PC.
+- The Apprua container runs without system powers (`--cap-drop ALL`, `no-new-privileges`); the engine token, the setup code and the first password reach Docker in a file only root can read, no longer on the command line.
+- The installer of a release takes the image of Apprua by its fingerprint; the server guides show how to check the downloaded archive with `SHA256SUMS.txt`. Coolify's install script is downloaded whole before it runs, with a notice that it comes from Coolify's site and its fingerprint on the screen.
+- The portal sends `X-Content-Type-Options` and `Referrer-Policy`.
+
+Windows
+
+- A user folder with an apostrophe (for example `C:\Users\D'Angelo`) no longer breaks the installation.
+- A `.wslconfig` that already has its own settings gets only the ones it misses; your settings stay, and removing Apprua takes away only its own lines.
+- Opening Apprua to the local network and closing it again touches only the port forwardings Apprua added; the firewall rule accepts only the local subnet and the private address ranges; the address of the PC is taken from its network card before a VPN.
+- Copies get a fingerprint file (`.sha256`) next to them, and bringing a copy back refuses one that was damaged or changed. The guide says that copies are not encrypted.
+- A PC with too little memory is told at the first step, before anything is downloaded; a terminal opened as administrator with another account stops with an explanation instead of installing Apprua in that account.
+- The setup code is shown again at the very end of the installer, where it is seen, until the first account is created. The first-run page also says how to read it again when the window was closed (on a server too).
+
+Servers
+
+- The installer warns when memory or disk are below what the guide asks for, and when "local network" is chosen on a machine with a public address.
+
+Texts and releases
+
+- `SECURITY.md` lists more known limits: what is downloaded and not checked during an installation, the Linux of Windows that runs as root and sees the files of the user, the image started by hand without a setup code.
+- Every change is checked on GitHub with shellcheck on the installers and `npm audit`; the release workflow publishes the GitHub release before npm, keeps no git credentials and no cache of libraries.
+
+**Italiano**
+
+Le app ora possono sapere chi le usa, e il resto della revisione di sicurezza del 10 novembre è fatto. Si consiglia di aggiornare ogni installazione: rilancia l'installer, come per ogni aggiornamento (tiene app e dati).
+
+Novità
+
+- **L'app sa chi la usa.** Quando l'accesso davanti alle app lascia passare una richiesta, l'app riceve email, nome e ruolo della persona (`X-Apprua-User`, `X-Apprua-User-Name`, `X-Apprua-Role`): un'app dove più persone cambiano gli stessi dati può scrivere "modificato da", avvisare quando due persone cambiano la stessa voce, o mostrare chi altro sta modificando. Il proxy toglie questi dati quando li manda un browser. Ogni app ha anche una sua chiave (`APPRUA_APP_KEY`, messa a ogni pubblicazione, e l'intestazione `X-Apprua-Key`): l'app si fida dei nomi solo se le due corrispondono, così un'altra app sulla stessa macchina non può spacciarsi per qualcun altro. Il connettore dice all'AI di usarli invece di costruire un login. Un'app pubblicata prima della 1.1 riceve la sua chiave alla pubblicazione successiva. Dettagli: [Who is using an app](docs/configuration.md#who-is-using-an-app). Chiesto dalla prima persona che ha provato Apprua fuori dal progetto.
+
+Sicurezza
+
+- I limiti ai tentativi di accesso e a "password dimenticata" non si aggirano più dall'interno: solo il proxy del motore può dire da quale indirizzo arriva una richiesta. Prima un'app o una build sulla stessa macchina poteva parlare direttamente con Apprua con un indirizzo inventato diverso a ogni tentativo.
+- Il controllo sulle pubblicazioni riconosce più tipi di chiavi (Stripe, GitLab, npm, SendGrid, Hugging Face, chiavi AWS temporanee, chiavi private PGP, `.ppk`, `.netrc`, `.pypirc`, `.git-credentials`). Il connettore ferma i file che sono chiavi già dal nome (`*.pem`, `*.key`, `id_rsa`, `credentials.json` e simili) prima che qualcosa lasci il PC.
+- Il contenitore di Apprua gira senza privilegi di sistema (`--cap-drop ALL`, `no-new-privileges`); il token del motore, il codice di configurazione e la prima password arrivano a Docker in un file che solo root legge, non più sulla riga di comando.
+- L'installer di una release scarica l'immagine di Apprua con la sua impronta; le guide per il server mostrano come controllare l'archivio scaricato con `SHA256SUMS.txt`. Lo script di installazione di Coolify viene scaricato intero prima di eseguirlo, con un avviso che viene dal sito di Coolify e la sua impronta sullo schermo.
+- Il portale manda `X-Content-Type-Options` e `Referrer-Policy`.
+
+Windows
+
+- Una cartella utente con un apostrofo (per esempio `C:\Users\D'Angelo`) non rompe più l'installazione.
+- Un `.wslconfig` che ha già le sue impostazioni riceve solo quelle che mancano; le tue restano, e togliere Apprua toglie solo le sue righe.
+- Aprire Apprua alla rete locale e richiuderla tocca solo gli inoltri delle porte aggiunti da Apprua; la regola del firewall accetta solo la sottorete locale e gli indirizzi privati; l'indirizzo del PC viene preso dalla sua scheda di rete prima di una VPN.
+- Le copie hanno accanto un file con l'impronta (`.sha256`), e il ripristino rifiuta una copia danneggiata o cambiata. La guida dice che le copie non sono cifrate.
+- Un PC con poca memoria lo sa al primo passo, prima di scaricare qualcosa; un terminale aperto come amministratore con un altro account si ferma con una spiegazione invece di installare Apprua in quell'account.
+- Il codice di configurazione viene ripetuto alla fine dell'installer, dove si vede, finché non si crea il primo account. La pagina della prima configurazione dice anche come rileggerlo se la finestra è stata chiusa (anche su un server).
+
+Server
+
+- L'installer avvisa quando memoria o disco sono sotto quanto chiede la guida, e quando "rete locale" è scelta su una macchina con un indirizzo pubblico.
+
+Testi e rilasci
+
+- `SECURITY.md` elenca più limiti noti: cosa viene scaricato senza controllo durante un'installazione, il Linux di Windows che gira come root e vede i file dell'utente, l'immagine avviata a mano senza codice di configurazione.
+- Ogni modifica viene controllata su GitHub con shellcheck sugli installer e `npm audit`; il lavoro di rilascio pubblica la release su GitHub prima di npm, non lascia credenziali git e non usa la cache delle librerie.
+
 ## [1.0.1]
 
 **English**
