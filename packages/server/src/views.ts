@@ -222,6 +222,7 @@ input:focus-visible{outline:2px solid var(--accent);outline-offset:0;border-colo
 .gate fieldset{border:1px solid var(--line);border-radius:12px;padding:12px 14px 14px;margin:0;display:grid;gap:12px}
 .gate legend{font-weight:700;padding:0 6px}
 .form .hint{font-weight:400;color:var(--muted);font-size:.84rem}
+.hint code.again{display:inline-block;margin-top:4px;font-family:var(--mono);font-size:.8rem;color:var(--ink);background:var(--soft);padding:2px 6px;border-radius:6px;overflow-wrap:anywhere;user-select:all}
 .gate .back{color:var(--muted);font-size:.9rem;justify-self:start}
 select{font:inherit;font-size:1rem;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);width:100%}
 input[type=number]{font:inherit;font-size:1rem;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);width:100%}
@@ -634,7 +635,12 @@ export interface SetupForm { profile: 'personal' | 'team'; error?: string; email
 /** First-run setup, step 2: the first account (and, for a group, the rules). */
 export function setupPage(lang: Lang, f: SetupForm): string {
   const team = f.profile === 'team';
-  const code = config.auth.setupCode ? `<label>${esc(t(lang, 'setup.code'))}<input type="text" name="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" required><span class="hint">${esc(t(lang, 'setup.code.hint'))}</span></label>` : '';
+  // where to read the code again when the installer's window is closed (only the Windows installer sets HOST_MEMORY_GB)
+  const onWindows = !!process.env.HOST_MEMORY_GB;
+  const again = onWindows
+    ? [t(lang, 'setup.code.again.win'), 'wsl -d Apprua -u root -- grep SETUP_CODE /root/.apprua/apprua.env']
+    : [t(lang, 'setup.code.again.srv'), 'sudo grep SETUP_CODE /root/.apprua/apprua.env'];
+  const code = config.auth.setupCode ? `<label>${esc(t(lang, 'setup.code'))}<input type="text" name="code" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" required><span class="hint">${esc(t(lang, 'setup.code.hint'))} ${esc(again[0])} <code class="again">${esc(again[1])}</code></span></label>` : '';
   const months = (m: number) => `<option value="${m}"${(f.reviewMonths ?? 6) === m ? ' selected' : ''}>${esc(t(lang, `setup.review.${m}`))}</option>`;
   const rules = team ? `<fieldset><legend>${esc(t(lang, 'setup.rules'))}</legend>
 <label>${esc(t(lang, 'setup.quota'))}<input type="number" name="quota" min="1" max="100" value="${f.quota ?? 5}" required></label>

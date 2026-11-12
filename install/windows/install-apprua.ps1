@@ -651,6 +651,17 @@ $know = if ($It) { @(
 ) }
 foreach ($k in $know) { Write-Host "    - $k" -ForegroundColor Yellow }
 Write-Host ''
+# The setup code, again at the very end where it is seen (install.sh writes it in the middle of many lines): only
+# while nobody has an account yet, that is while the portal still sends to the first-run setup
+$setupCode = Get-Stored 'SETUP_CODE'
+if ($setupCode) {
+  $toSetup = ((wsl.exe -d $Distro -u root -- sh -c "curl -s -o /dev/null -w '%{redirect_url}' http://localhost:3000/") -replace "`0", '' | Out-String).Trim()
+  if ($toSetup -like '*/setup*') {
+    Write-Host $(if ($It) { "    CODICE DI CONFIGURAZIONE (lo chiede la prima pagina, solo questa volta): $setupCode" } else { "    SETUP CODE (the first page asks for it, only this time): $setupCode" }) -ForegroundColor Green
+    Info "To read it again: wsl -d $Distro -u root -- grep SETUP_CODE /root/.apprua/apprua.env" "Per rileggerlo: wsl -d $Distro -u root -- grep SETUP_CODE /root/.apprua/apprua.env"
+    Write-Host ''
+  }
+}
 Info 'The first-run setup opens in your browser now. If you close it, open the Apprua icon: it starts again where you left it.' "Ora si apre nel browser la prima configurazione. Se la chiudi, apri l'icona Apprua: riparte dal punto in cui eri."
 # No browser to open (for example over SSH): Apprua is ready anyway, the address is written above
 try { Start-Process 'http://localhost:3000' } catch { Info 'Open http://localhost:3000 in the browser.' 'Apri http://localhost:3000 nel browser.' }
