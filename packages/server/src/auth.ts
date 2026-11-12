@@ -222,6 +222,16 @@ export function endSession(req: FastifyRequest, reply: FastifyReply): void {
 // The way in: gate -> portal /_apprua/pass (signed in? if not, the login) -> a code for one use, one minute, one app
 // -> <app>/_apprua/enter, answered by the gate itself (the app never sees the code) -> the cookie -> the page asked for.
 
+/** Who is using the app, for the app itself: the gate adds these headers to every request it lets through, and the
+ *  proxy copies them to the request the app receives (and removes them when a browser sends them). The name is
+ *  URL-encoded (headers hold only plain characters); nobody signed in, no user headers. */
+export const USER_HEADERS = { email: 'X-Apprua-User', name: 'X-Apprua-User-Name', role: 'X-Apprua-Role', key: 'X-Apprua-Key' } as const;
+/** The app's own key, in its variable APPRUA_APP_KEY (set at every publication) and in the header X-Apprua-Key: the
+ *  app trusts the user headers only when the two match. Other apps on the same machine could reach it without the
+ *  proxy and send made-up headers, but they cannot know its key. */
+export const APP_KEY_ENV = 'APPRUA_APP_KEY';
+export const appKey = (app: string) => sign(`app-key.${app}`);
+
 /** With HTTPS the "__Host-" name also stops a sibling app from setting a cookie of the same name for the domain. */
 export const gateCookieName = (secure: boolean) => (secure ? '__Host-apprua_gate' : 'apprua_gate');
 const GATE_HOURS = 12;

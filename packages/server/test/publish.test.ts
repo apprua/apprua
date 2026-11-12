@@ -273,6 +273,10 @@ test('versions: go back to an earlier one, download it; secrets: names only, cha
   assert.deepEqual(await appOps.listEnv(me, 'my-notes'), ['API_KEY']);
   await appOps.deleteEnv(me, 'my-notes', 'API_KEY', false);
   assert.deepEqual(await appOps.listEnv(me, 'my-notes'), []);
+  // the app's own key: set by every publication, not shown in the list, not changed or removed by hand
+  assert.ok(envs['id-my-notes']?.has('APPRUA_APP_KEY'), 'set at the publication');
+  await assert.rejects(appOps.setEnv(me, 'my-notes', 'APPRUA_APP_KEY', 'mine', false), /set by Apprua/);
+  await assert.rejects(appOps.deleteEnv(me, 'my-notes', 'APPRUA_APP_KEY', false), /set by Apprua/);
 
   const page = views.appPage('it', me, db.getApp('my-notes')!, after, ['API_KEY', 'DB_PASSWORD']);
   assert.match(page, /Torna a questa/);

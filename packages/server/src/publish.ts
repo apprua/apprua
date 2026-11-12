@@ -2,6 +2,7 @@
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { appKey, APP_KEY_ENV } from './auth.js';
 import { appUrl, config } from './config.js';
 import { HttpError } from './errors.js';
 import { audit, countActiveApps, getApp, getDb, updateApp, type App, type User } from './db.js';
@@ -289,6 +290,8 @@ export async function runDeploy(name: string, user: string, source: 'upload' | '
       // Before every publication: the labels of the app, with the sign-in in front of it, set again and checked. A
       // step that failed before (or an app from an older version) can never be published without them.
       await e.applyLabels(app.engine_id!, name, app.owner);
+      // the app's own key, to tell the user headers of the gate from made-up ones (see APP_KEY_ENV in auth.ts)
+      await e.setEnv(app.engine_id!, APP_KEY_ENV, appKey(name));
       // from here the engine may start a deployment even if its answer is lost: the time of the request is kept
       getDb().prepare('UPDATE deploys SET requested_at = ? WHERE id = ?').run(new Date().toISOString(), id);
       deployment = await e.deploy(app.engine_id!);

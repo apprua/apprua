@@ -73,6 +73,28 @@ The owner changes it from the menu of the app in the portal, or by asking the AI
 once. On "only this computer" there is nothing to protect and no sign-in. With `AUTH_MODE=proxy` or
 `APP_AUTH_MIDDLEWARE` the login in front of the apps is the one of the company proxy instead.
 
+## Who is using an app
+
+An app where several people change the same data often needs to know who is doing it: to write "changed by" next to
+a change, to warn when two people change the same entry, or to show who else is editing. When the gate lets a request
+through, the app receives these headers with it:
+
+| Header | What it holds |
+|---|---|
+| `X-Apprua-User` | the email of the person signed in |
+| `X-Apprua-User-Name` | their name, URL-encoded (read it with `decodeURIComponent` or `urllib.parse.unquote`); empty when they have none |
+| `X-Apprua-Role` | `admin` or `user` (their role in Apprua) |
+| `X-Apprua-Key` | the key of the app, always present |
+
+The proxy removes these headers when a browser sends them, so a person cannot pass for someone else. Other apps on the
+same machine, though, could call the app directly and send made-up headers: an app trusts the user headers only when
+`X-Apprua-Key` is the same as its variable `APPRUA_APP_KEY`, which Apprua sets at every publication (every app has its
+own; an app published before this version gets it at its next publication). With no `X-Apprua-User` nobody is
+signed in: a public app opened without signing in, or "only this computer", where there is no sign-in at all.
+
+The headers are there only with Apprua's own sign-in in front of the apps: with `APP_AUTH_MIDDLEWARE` the company
+proxy sends its own, if any.
+
 ## The Coolify panel
 
 On a server the installer closes the Coolify panel (8000) and its live updates (6001, 6002) to the network, on IPv4

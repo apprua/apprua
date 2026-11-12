@@ -1,4 +1,5 @@
 // Owner operations on an app (owner or admin), shared by the /v1 API (MCP) and the portal buttons.
+import { APP_KEY_ENV } from './auth.js';
 import { HttpError } from './errors.js';
 import { audit, getApp, getDb, updateApp, VISIBILITIES, type User, type Visibility } from './db.js';
 import { engine } from './engine/index.js';
@@ -65,9 +66,15 @@ export async function appLogs(u: User, name: string, type: 'runtime' | 'build', 
   return { type, result: null, lines: await engine().runtimeLogs(a.engine_id, lines) };
 }
 
+/** A name the user can set or remove: UPPER_CASE, and not the app's key, which Apprua sets at every publication. */
+function checkEnvKey(key: string) {
+  if (!/^[A-Z_][A-Z0-9_]{0,63}$/.test(key ?? '')) throw new HttpError(400, 'Variable name must be UPPER_CASE letters, digits and underscores.');
+  if (key === APP_KEY_ENV) throw new HttpError(400, `${APP_KEY_ENV} is set by Apprua at every publication: choose another name.`);
+}
+
 export async function setEnv(u: User, name: string, key: string, value: unknown, restart = true) {
   const a = assertCanManage(u, getApp(name), name);
-  if (!/^[A-Z_][A-Z0-9_]{0,63}$/.test(key ?? '')) throw new HttpError(400, 'Variable name must be UPPER_CASE letters, digits and underscores.');
+  checkEnvKey(key);
   if (typeof value !== 'string') throw new HttpError(400, 'Missing value.');
   if (!a.engine_id) throw new HttpError(409, 'The app was never deployed: publish it again.');
   await engine().setEnv(a.engine_id, key, value);
@@ -92,12 +99,12 @@ async function restartIfActive(name: string, wanted: boolean): Promise<boolean> 
 /** Names of the secrets and settings of the app (never the values: they cannot be read back). */
 export async function listEnv(u: User, name: string): Promise<string[]> {
   const a = assertCanManage(u, getApp(name), name);
-  return a.engine_id ? engine().listEnv(a.engine_id) : [];
+  return a.engine_id ? (await engine().listEnv(a.engine_id)).filter((k) => k !== APP_KEY_ENV) : [];
 }
 
 export async function deleteEnv(u: User, name: string, key: string, restart = true) {
   const a = assertCanManage(u, getApp(name), name);
-  if (!/^[A-Z_][A-Z0-9_]{0,63}$/.test(key ?? '')) throw new HttpError(400, 'Variable name must be UPPER_CASE letters, digits and underscores.');
+  checkEnvKey(key);
   if (!a.engine_id) throw new HttpError(409, 'The app was never deployed: publish it again.');
   await engine().deleteEnv(a.engine_id, key);
   audit(u.email, 'app.env.delete', a.name, { key });

@@ -50,6 +50,7 @@ server.registerTool('publish_app', {
     `("publish on ${BRAND}" / "pubblica su ${BRAND}" means this tool; the app gets its own address, https://<name>.<domain> or http://<name>.localhost). ` +
     'BEFORE calling: confirm with the user the app name, a one-line description, and whether the app saves data (persistent=true keeps /data across deploys). ' +
     'Never put secrets (API keys, passwords) in the files: use set_env after publishing. Supported: a Dockerfile, a Node/Python/... project, or a static folder with index.html. ' +
+    `If the app needs to know who is using it (several people changing shared data, "changed by", conflicts), do not build a login: ${BRAND} signs people in and its server side gets the headers X-Apprua-User (email), X-Apprua-User-Name (URL-encoded) and X-Apprua-Role, trusted only when the header X-Apprua-Key equals the variable APPRUA_APP_KEY; no X-Apprua-User means nobody signed in. ` +
     'After success, give the user the URL. On failure read the log, propose a fix, and use update_app.',
   inputSchema: {
     path: z.string().describe('Absolute path of the local folder to publish (on this PC). If the user says "this project", use the root folder of the project you are working on'),

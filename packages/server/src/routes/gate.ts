@@ -1,11 +1,12 @@
 // The gate in front of the apps (local network and internet). The engine's proxy asks it before every request to an
 // app (Traefik "forwardAuth", middleware apprua-auth written by install/install.sh): 2xx lets the request through,
 // anything else goes back to the browser as it is (a redirect to sign in, or a page that says the app is private).
+// With a 2xx it also tells the app who is using it (USER_HEADERS in auth.ts, copied by the proxy).
 //
 // Every app has its own cookie, valid only at its own address and only for it (see auth.ts, "the sign-in in front of
 // the apps"): the portal's cookie never reaches the apps, which run code written by AI.
 import type { FastifyInstance, FastifyRequest } from 'fastify';
-import { gateCookie, gateUser, issuePass, portalUser, safeNext, usePass } from '../auth.js';
+import { appKey, gateCookie, gateUser, issuePass, portalUser, safeNext, usePass, USER_HEADERS } from '../auth.js';
 import { config } from '../config.js';
 import { getApp, type App, type User } from '../db.js';
 import { langOf, t } from '../i18n.js';
@@ -54,7 +55,12 @@ export async function gateRoutes(app: FastifyInstance) {
     let u: User | null = null;
     try { u = config.auth.mode === 'proxy' ? portalUser(req) : gateUser(req, a.name, origin.startsWith('https:')); } catch { u = null; }
     const answer = canOpen(a, u);
-    if (answer.allow) return reply.code(204).send();
+    if (answer.allow) {
+      // for the app: who is using it (see USER_HEADERS), always with the app's key, also when nobody is signed in
+      reply.header(USER_HEADERS.key, appKey(a.name));
+      if (u) reply.header(USER_HEADERS.email, u.email).header(USER_HEADERS.name, encodeURIComponent(u.name ?? '')).header(USER_HEADERS.role, u.role);
+      return reply.code(204).send();
+    }
     if (answer.signIn) {
       const back = `${origin}${uri}`;
       return reply.code(302).redirect(config.auth.mode === 'proxy' ? `${config.publicUrl}/login?next=${encodeURIComponent(back)}` : passUrl(back));

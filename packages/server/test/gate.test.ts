@@ -92,6 +92,30 @@ test('the way in: the app gets its own cookie, the portal cookie never reaches i
   assert.equal((await gate('notes.app.ufficio.lan', '/', ada)).statusCode, 302);
 });
 
+test('the app is told who is using it, with its own key', async () => {
+  db.upsertUser('dee@example.test', 'Niccolò Müller', 'user');
+  const code = auth.issuePass('dee@example.test', 'notes');
+  const dee = cookies(await gate('notes.app.ufficio.lan', `/_apprua/enter?code=${code}&next=/`))[0].split(';')[0];
+  const r = await gate('notes.app.ufficio.lan', '/', dee);
+  assert.equal(r.statusCode, 204);
+  assert.equal(r.headers['x-apprua-user'], 'dee@example.test');
+  assert.equal(decodeURIComponent(String(r.headers['x-apprua-user-name'])), 'Niccolò Müller', 'the name is URL-encoded');
+  assert.equal(r.headers['x-apprua-role'], 'user');
+  assert.equal(r.headers['x-apprua-key'], auth.appKey('notes'));
+  assert.notEqual(auth.appKey('notes'), auth.appKey('evil'), 'every app has its own key');
+  // a public app, nobody signed in: the key only, no user
+  addApp('board', 'bo@example.test', 'public');
+  const anon = await gate('board.app.ufficio.lan', '/');
+  assert.equal(anon.statusCode, 204);
+  assert.equal(anon.headers['x-apprua-key'], auth.appKey('board'));
+  assert.equal(anon.headers['x-apprua-user'], undefined);
+  // a refused request tells the app nothing
+  const refused = await gate('notes.app.ufficio.lan', '/');
+  assert.equal(refused.statusCode, 302);
+  assert.equal(refused.headers['x-apprua-user'], undefined);
+  assert.equal(refused.headers['x-apprua-key'], undefined);
+});
+
 test('an app cannot use the cookie of the people who open it anywhere else', async () => {
   const ada = await signIn('ada@example.test', 'ada-password-1');
   const evilCookie = await enter('evil.app.ufficio.lan', '/', ada);

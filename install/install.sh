@@ -450,11 +450,17 @@ if [ -d "$PROXY_DYNAMIC" ]; then
   if [ "$NETWORK" != local ]; then
     cat > "$PROXY_DYNAMIC/apprua-auth.yaml" <<'YAML'
 # managed by apprua (install.sh): the sign-in in front of the apps asks Apprua who can open each app
+# and tells the app who is using it (the proxy removes these headers when a browser sends them)
 http:
   middlewares:
     apprua-auth:
       forwardAuth:
         address: 'http://apprua:3000/_apprua/gate'
+        authResponseHeaders:
+          - X-Apprua-User
+          - X-Apprua-User-Name
+          - X-Apprua-Role
+          - X-Apprua-Key
 YAML
     GATE=1
   else
