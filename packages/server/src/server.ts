@@ -18,7 +18,9 @@ import { VERSION } from './version.js';
 import { resolveConnectorSource } from './downloads.js';
 import { hideSecrets } from './logs.js';
 import { resumeOpenPublications } from './publish.js';
+import { startProxyTrust, trustHop } from './proxyTrust.js';
 
+startProxyTrust((m) => console.warn(m));
 openDb();
 // Publications still "in progress" from before this start: those never sent to the engine are closed as failed; those
 // it took, or that were sent and whose answer never came, stay open: they are followed again, or the engine is asked
@@ -38,7 +40,8 @@ const app = Fastify({
     serializers: { req: (req: { method: string; url: string; hostname?: string; ip?: string }) => ({ method: req.method, url: hideSecrets(req.url), host: req.hostname, remoteAddress: req.ip }) },
   },
   bodyLimit: 1024 * 1024,
-  trustProxy: true,
+  // only the engine's proxy may say where a request came from (see proxyTrust.ts)
+  trustProxy: (address: string) => trustHop(address),
 });
 
 app.setErrorHandler((err, req, reply) => {

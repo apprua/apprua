@@ -142,6 +142,7 @@ The published apps run code written by AI, so each one is kept apart (`install/a
 | `COOLIFY_PROJECT_UUID`, `COOLIFY_SERVER_UUID` | Where apps are created |
 | `GIT_INTERNAL_URL` | How build containers reach Apprua's git server, default `http://apprua:3001` |
 | `APP_AUTH_MIDDLEWARE` | Optional Traefik middleware that puts a login in front of every app (team installs) |
+| `APPRUA_PROXY_HOST` | Name of the engine's proxy on the Docker network, default `coolify-proxy`. Only requests coming from it may say which address they came from (`X-Forwarded-For`, used by the limits on sign-in attempts); while it is not found, everyone is believed, as before 1.1 |
 | `APPRUA_COOLIFY_VERSION` | Installer only. The Coolify version to install or update to; by default the one this Apprua was tested with (`"apprua": { "coolify" }` in `package.json`). `latest` installs the newest, at your own risk. Coolify never updates by itself: the installer turns its automatic updates off |
 | `AUTO_BUILDPACK` | `nixpacks` (default) or `railpack` for projects without a Dockerfile |
 
