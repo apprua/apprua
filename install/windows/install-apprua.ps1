@@ -40,7 +40,8 @@ param(
   [ValidateSet('', 'off', 'own')][string]$Https = ''
 )
 $ErrorActionPreference = 'Stop'
-# Messages: Say 'English' 'Italiano' (Italian on an Italian Windows, see $It below)
+# Messages: Say 'English' 'Italiano' (Italian on an Italian Windows)
+$It = (Get-UICulture).TwoLetterISOLanguageName -eq 'it'
 function Say($t, $it = $null) { if ($It -and $it) { $t = $it }; Write-Host "`n==> $t" -ForegroundColor Cyan }
 function Info($t, $it = $null) { if ($It -and $it) { $t = $it }; Write-Host "    $t" }
 # Removing Apprua writes what it shows to %TEMP%\apprua-uninstall.log: if it goes wrong, the reason is there
@@ -123,8 +124,13 @@ function Get-Distros {
 # Windows forwards port 80 of its network address there, and its firewall lets it in (private networks only).
 $NetRule = 'Apprua (local network)'
 function Get-LanIp {
-  (Get-NetIPConfiguration -ErrorAction SilentlyContinue | Where-Object { $_.NetAdapter.Status -eq 'Up' -and $_.IPv4DefaultGateway } |
-    Select-Object -First 1).IPv4Address.IPAddress
+  # The address on the office or home network: a network card of the PC (cable or Wi-Fi) before a VPN or a virtual
+  # adapter, which can also have a gateway but is not where the other PCs of the network find this one
+  $up = @(Get-NetIPConfiguration -ErrorAction SilentlyContinue | Where-Object { $_.NetAdapter.Status -eq 'Up' -and $_.IPv4DefaultGateway -and $_.IPv4Address })
+  $physical = @(Get-NetAdapter -Physical -ErrorAction SilentlyContinue | ForEach-Object { $_.ifIndex })
+  $best = @($up | Where-Object { $physical -contains $_.InterfaceIndex }) + @($up | Where-Object { $physical -notcontains $_.InterfaceIndex })
+  if (-not $best.Count) { return $null }
+  @($best[0].IPv4Address)[0].IPAddress
 }
 function Get-LanForward([string]$port = '80') {   # the address where Apprua is open to the network on that port, or nothing
   foreach ($l in ((netsh interface portproxy show v4tov4) -split "`r?`n")) {
@@ -147,7 +153,8 @@ function Set-LanForward([string]$mode, [string]$ip) {
   try {
     $p = Start-Process -FilePath 'powershell.exe' -Verb RunAs -Wait -PassThru -WindowStyle Hidden -ArgumentList @(
       '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$script`"",
-      '-Mode', $mode, '-Ip', $(if ($ip) { $ip } else { 'none' }), '-LogFile', "`"$log`"")
+      '-Mode', $mode, '-Ip', $(if ($ip) { $ip } else { 'none' }), '-LogFile', "`"$log`"",
+      '-StateFile', "`"$(Join-Path $AppDir 'network-forwards.txt')`"")
     $ok = $p.ExitCode -eq 0
   } catch { Info $(if ($It) { 'Permesso non concesso.' } else { 'Permission not given.' }) }
   if (Test-Path $log) { Get-Content $log | ForEach-Object { Info $_ } }
@@ -156,16 +163,54 @@ function Set-LanForward([string]$mode, [string]$ip) {
 
 # Memory Apprua may use: at least 4 GB, and always at least 4 GB left to Windows.
 function Test-Memory([int]$gb) {
-  if ($gb -lt 4) { Fail "Apprua needs at least 4 GB of memory." }
-  if ($gb -gt $PcMemoryGB - 4) { Fail "This PC has $PcMemoryGB GB of RAM: give Apprua at most $($PcMemoryGB - 4) GB, so Windows keeps at least 4 GB." }
+  if ($PcMemoryGB -lt 8) {
+    Fail $(if ($It) { "Questo PC ha $PcMemoryGB GB di memoria: Apprua ne usa almeno 4 e ne lascia almeno 4 a Windows, quindi serve un PC con almeno 8 GB." }
+           else { "This PC has $PcMemoryGB GB of memory: Apprua uses at least 4 and leaves at least 4 to Windows, so a PC with at least 8 GB is needed." })
+  }
+  if ($gb -lt 4) { Fail $(if ($It) { 'Apprua ha bisogno di almeno 4 GB di memoria.' } else { 'Apprua needs at least 4 GB of memory.' }) }
+  if ($gb -gt $PcMemoryGB - 4) {
+    Fail $(if ($It) { "Questo PC ha $PcMemoryGB GB di memoria: dai ad Apprua al massimo $($PcMemoryGB - 4) GB, cos$([char]0xEC) a Windows ne restano almeno 4." }
+           else { "This PC has $PcMemoryGB GB of RAM: give Apprua at most $($PcMemoryGB - 4) GB, so Windows keeps at least 4 GB." })
+  }
 }
+# Settings Apprua adds to a .wslconfig that already had its own sections: each added line comes right after this mark
+$WslMark = '# apprua: next line added by the Apprua installer (removed with Apprua)'
+function Merge-WslConfig([string]$text, [hashtable]$want) {
+  $lines = New-Object System.Collections.Generic.List[string]
+  foreach ($l in ($text -split "`r?`n")) { $lines.Add($l) }
+  while ($lines.Count -and -not $lines[$lines.Count - 1].Trim()) { $lines.RemoveAt($lines.Count - 1) }
+  $kept = @()
+  foreach ($sec in 'wsl2', 'general') {
+    if (-not $want.Contains($sec)) { continue }
+    $start = -1
+    for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match "^\s*\[$sec\]\s*$") { $start = $i; break } }
+    if ($start -lt 0) {
+      $lines.Add(''); $lines.Add($WslMark); $lines.Add("[$sec]"); $start = $lines.Count - 1
+    }
+    $end = $lines.Count
+    for ($i = $start + 1; $i -lt $lines.Count; $i++) { if ($lines[$i] -match '^\s*\[') { $end = $i; break } }
+    $at = $start + 1
+    foreach ($key in $want[$sec].Keys) {
+      $have = $null
+      for ($i = $start + 1; $i -lt $end; $i++) { if ($lines[$i] -match "^\s*$key\s*=\s*(.*)$") { $have = $Matches[1].Trim() } }
+      if ($null -ne $have) { $kept += "$key=$have"; continue }
+      $lines.Insert($at, $WslMark); $lines.Insert($at + 1, "$key=$($want[$sec][$key])")
+      $at += 2; $end += 2
+    }
+  }
+  @{ Text = (($lines -join "`r`n") + "`r`n"); Kept = $kept }
+}
+# A value for the shell inside the Linux, in single quotes: a folder like C:\Users\D'Angelo stays one piece
+function BashQ([string]$s) { "'" + ($s -replace "'", "'\''") + "'" }
 
 if ($SetMemoryGB -gt 0) {
   Say "Giving Apprua $SetMemoryGB GB of memory (this PC has $PcMemoryGB GB)"
   Test-Memory $SetMemoryGB
   $cur = if (Test-Path $WslConfig) { Get-Content $WslConfig -Raw } else { '' }
-  if ($cur -notmatch '(?ms)# >>> apprua.*?# <<< apprua') { Fail "The Apprua settings are not in $WslConfig. Change the line memory= under [wsl2] by hand, then run: wsl --shutdown" }
-  $new = [regex]::Replace($cur, '(?ms)(# >>> apprua.*?^memory=)\d+GB', "`${1}${SetMemoryGB}GB")
+  $marked = "(?m)(^$([regex]::Escape($WslMark))\r?\nmemory=)\d+GB"
+  if ($cur -match '(?ms)# >>> apprua.*?# <<< apprua') { $new = [regex]::Replace($cur, '(?ms)(# >>> apprua.*?^memory=)\d+GB', "`${1}${SetMemoryGB}GB") }
+  elseif ($cur -match $marked) { $new = [regex]::Replace($cur, $marked, "`${1}${SetMemoryGB}GB") }
+  else { Fail "The memory of WSL is set by you in $WslConfig, not by Apprua. Change the line memory= under [wsl2] by hand, then run: wsl --shutdown" }
   [IO.File]::WriteAllText($WslConfig, $new)   # no BOM
   $others = @(Get-Distros | Where-Object { $_ -ne $Distro })
   if ($others.Count) { Info "Note: the other Linux on this PC restart too ($($others -join ', '))" }
@@ -179,7 +224,6 @@ if ($SetMemoryGB -gt 0) {
 # A copy is the whole Linux "Apprua" (Coolify, Apprua, apps, their data and code) in one .tar file.
 # It goes to a folder of the user profile, not to Documents: Documents is often synced by OneDrive.
 $BackupDir = Join-Path $env:USERPROFILE 'Apprua-backups'
-$It = (Get-UICulture).TwoLetterISOLanguageName -eq 'it'
 function Get-LinuxDiskGB {
   # Size of the Linux disk file: a copy is at most this big
   $key = Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss' -ErrorAction SilentlyContinue |
@@ -204,6 +248,10 @@ function Save-Backup {
   $out = (wsl.exe --export $Distro $file 2>&1 | Out-String) -replace "`0", ''
   if ($LASTEXITCODE -ne 0 -or -not (Test-Path $file)) { Write-Host $out; Fail "The copy could not be saved." }
   Info ('Copy saved ({0:N1} GB)' -f ((Get-Item $file).Length / 1GB)) ('Copia salvata ({0:N1} GB)' -f ((Get-Item $file).Length / 1GB))
+  # Its fingerprint next to it, as on a server: -RestoreFrom checks it (a copy damaged or changed is refused)
+  $hash = (Get-FileHash -Algorithm SHA256 $file).Hash.ToLower()
+  [IO.File]::WriteAllText("$file.sha256", "$hash  $(Split-Path $file -Leaf)`n")
+  Info "Fingerprint: $file.sha256. The copy holds all the data and the secrets of the apps, not encrypted: keep it where only you can read it." "Impronta: $file.sha256. La copia contiene tutti i dati e i segreti delle app, non cifrati: tienila dove solo tu puoi leggerla."
   return $file
 }
 
@@ -254,6 +302,7 @@ if ($Uninstall) {
   if (Test-Path $WslConfig) {
     $old = Get-Content $WslConfig -Raw
     $c = [regex]::Replace($old, '(?ms)^# >>> apprua.*?# <<< apprua\r?\n?', '')
+    $c = [regex]::Replace($c, "(?m)^$([regex]::Escape($WslMark))\r?\n[^\r\n]*(\r?\n)?", '')   # lines added to the person's own sections
     if ($c -ne $old) {
       if ($c.Trim()) { [IO.File]::WriteAllText($WslConfig, $c) } else { Remove-Item $WslConfig }
       Info ".wslconfig restored" ".wslconfig rimesso com'era"
@@ -280,6 +329,10 @@ if (-not $cs.HypervisorPresent) {
 $freeGB = [math]::Round((Get-PSDrive C).Free / 1GB)
 if ($freeGB -lt 15) { Fail "Only $freeGB GB free on C: (at least 15 GB are needed)." }
 Info "Windows build $build, $freeGB GB free" "Windows build $build, $freeGB GB liberi"
+# The memory is checked here, before anything is downloaded (a PC with too little memory used to stop only after
+# creating the Linux)
+if ($MemoryGB -le 0) { $MemoryGB = [math]::Max(4, [math]::Min(16, [int][math]::Floor($PcMemoryGB / 2))) }
+Test-Memory $MemoryGB
 
 $wslOk = $true
 try { wsl.exe --status *> $null; if ($LASTEXITCODE -ne 0) { $wslOk = $false } } catch { $wslOk = $false }
@@ -348,6 +401,17 @@ if (-not $wslOk) {
   Info "WSL ready" "WSL pronto"
 }
 
+# ------------------------------------------------------------------ The right Windows account
+# Apprua belongs to the person signed in to this PC (their folder, icons, start at sign-in). A terminal opened "as
+# administrator" with ANOTHER account (common where people have no administrator rights) would put it in that
+# account instead. WSL itself is installed above even then; from here on it must be the person's own window.
+$me = [Security.Principal.WindowsIdentity]::GetCurrent().Name
+$atScreen = try { (Get-CimInstance Win32_ComputerSystem).UserName } catch { $null }
+if ($atScreen -and $atScreen -ne $me) {
+  Fail $(if ($It) { "Questa finestra $([char]0xE8) dell'account $me, ma sul PC $([char]0xE8) aperta la sessione di ${atScreen}: Apprua finirebbe nell'account sbagliato. Chiudi questa finestra e rilancia il comando da una finestra di PowerShell normale (non come amministratore) di $atScreen." }
+         else { "This window belongs to the account $me, but $atScreen is signed in to this PC: Apprua would end up in the wrong account. Close this window and run the command again from a normal PowerShell window (not as administrator) of $atScreen." })
+}
+
 # ------------------------------------------------------------------ Another Docker on this PC
 # All the Linux of WSL share one network: another Docker (Docker Desktop, or Docker inside another Linux) can clash with
 # the one of Apprua (same addresses, network rules removed when it stops), and the apps stop answering. Only a warning:
@@ -388,6 +452,17 @@ if ($RestoreFrom) {
   if (-not (Test-Path $RestoreFrom)) { Fail "File not found: $RestoreFrom" }
   if ((Get-Distros) -contains $Distro) { Fail "There is already a Linux '$Distro' on this PC. Remove it first with -Uninstall." }
   Say "Bringing Apprua back from $RestoreFrom (a few minutes)" "Rimetto Apprua com'era dalla copia $RestoreFrom (qualche minuto)"
+  # The fingerprint written next to the copy when it was made: a copy damaged or changed since is refused
+  $hash = (Get-FileHash -Algorithm SHA256 $RestoreFrom).Hash.ToLower()
+  $sumFile = "$((Resolve-Path $RestoreFrom).Path).sha256"
+  if (Test-Path $sumFile) {
+    $want = ((Get-Content $sumFile -Raw).Trim() -split '\s+')[0].ToLower()
+    if ($want -ne $hash) { Fail $(if ($It) { "La copia non corrisponde alla sua impronta ($sumFile): $([char]0xE8) danneggiata o cambiata. Non la uso." } else { "The copy does not match its fingerprint ($sumFile): it is damaged or was changed. Not using it." }) }
+    Info "The copy matches its fingerprint" "La copia corrisponde alla sua impronta"
+  } else {
+    Write-Host $(if ($It) { "    Accanto alla copia non c'$([char]0xE8) il file .sha256: non posso controllare che sia integra. Impronta della copia: $hash" }
+                 else { "    There is no .sha256 file next to the copy: it cannot be checked. Fingerprint of the copy: $hash" }) -ForegroundColor Yellow
+  }
   $linuxDir = Join-Path $AppDir 'linux'
   New-Item -ItemType Directory -Force $linuxDir | Out-Null
   wsl.exe --import $Distro $linuxDir (Resolve-Path $RestoreFrom).Path --version 2
@@ -409,15 +484,23 @@ wsl.exe -d $Distro -u root -- sh -c "grep -q 'appendWindowsPath=false' /etc/wsl.
 
 # ------------------------------------------------------------------ 3. Keep it running
 # Without this, Windows stops WSL about 90 seconds after the last terminal closes, and the apps go offline.
-if ($MemoryGB -le 0) { $MemoryGB = [math]::Max(4, [math]::Min(16, [int][math]::Floor($PcMemoryGB / 2))) }
-Test-Memory $MemoryGB
-$block = "# >>> apprua (added by the Apprua installer; remove this block to undo)`n" +
+$block ="# >>> apprua (added by the Apprua installer; remove this block to undo)`n" +
          "[wsl2]`nmemory=${MemoryGB}GB`nvmIdleTimeout=-1`n`n[general]`ninstanceIdleTimeout=-1`n# <<< apprua`n"
 $current = if (Test-Path $WslConfig) { Get-Content $WslConfig -Raw } else { '' }
-if ($current -notmatch '# >>> apprua') {
+if ($current -notmatch '# >>> apprua' -and $current -notmatch "(?m)^$([regex]::Escape($WslMark))") {
   if ($current -match '(?m)^\s*\[(wsl2|general)\]') {
-    Write-Host "    Your .wslconfig already has [wsl2] or [general] settings: add these lines by hand:" -ForegroundColor Yellow
-    Write-Host $block
+    # A .wslconfig of the person with its own [wsl2] or [general]: only the missing settings are added, each under a
+    # line that marks it (removed with Apprua); what the person already set stays as it is
+    $r = Merge-WslConfig $current @{ 'wsl2' = [ordered]@{ memory = "${MemoryGB}GB"; vmIdleTimeout = '-1' }; 'general' = [ordered]@{ instanceIdleTimeout = '-1' } }
+    [IO.File]::WriteAllText($WslConfig, $r.Text)   # no BOM
+    Info ".wslconfig updated: only the missing settings were added" ".wslconfig aggiornato: aggiunte solo le impostazioni che mancavano"
+    foreach ($k in $r.Kept) {
+      Info "Your .wslconfig already sets $k`: left as it is" "Il tuo .wslconfig imposta gi$([char]0xE0) $k`: lasciato com'$([char]0xE8)"
+      if ($k -match '^(vmIdleTimeout|instanceIdleTimeout)=(?!-1\s*$)') {
+        Write-Host $(if ($It) { "    Attenzione: con $k Windows spegne Apprua quando non lo usi, e le app si fermano. Per tenerle accese metti -1." }
+                     else { "    Note: with $k Windows stops Apprua when you do not use it, and the apps go offline. To keep them on, set it to -1." }) -ForegroundColor Yellow
+      }
+    }
   } else {
     [IO.File]::WriteAllText($WslConfig, ($current + "`n" + $block).TrimStart())   # no BOM
     Info ".wslconfig updated (no automatic shutdown, Apprua can use up to $MemoryGB of the $PcMemoryGB GB of this PC)" ".wslconfig aggiornato (niente spegnimento automatico, Apprua pu$([char]0xF2) usare fino a $MemoryGB dei $PcMemoryGB GB di questo PC)"
@@ -439,11 +522,12 @@ try {
 # ------------------------------------------------------------------ 4. Coolify + Apprua inside Linux
 Say "Step 3 of 5: installing Apprua inside '$Distro' (5-10 minutes the first time)" "Passo 3 di 5: installo Apprua dentro '$Distro' (5-10 minuti la prima volta, puoi lasciarlo lavorare)"
 $src = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$wslSrc = (wsl.exe -d $Distro -u root -- wslpath -a ($src -replace '\\', '/')) -replace "`0", ''
+# wslpath runs without the Linux shell in between (-e): a folder like C:\Users\D'Angelo would otherwise break it
+$wslSrc = ((wsl.exe -d $Distro -u root -e wslpath -a ($src -replace '\\', '/')) -replace "`0", '').Trim()
 # Empty folder on the drive that holds the Linux disk: Apprua reads only its free space (Settings page)
 $diskDir = Join-Path $env:LOCALAPPDATA 'Apprua\disk-space'
 New-Item -ItemType Directory -Force $diskDir | Out-Null
-$wslDisk = (wsl.exe -d $Distro -u root -- wslpath -a ($diskDir -replace '\\', '/')) -replace "`0", ''
+$wslDisk = ((wsl.exe -d $Distro -u root -e wslpath -a ($diskDir -replace '\\', '/')) -replace "`0", '').Trim()
 # The DNS servers of this PC (on a company network, the company ones): install.sh tries them when the DNS bridge of WSL does not answer
 $hostDns = (@(Get-NetIPConfiguration -ErrorAction SilentlyContinue | Where-Object { $_.NetAdapter.Status -eq 'Up' -and $_.IPv4DefaultGateway } |
   ForEach-Object { $_.DNSServer.ServerAddresses }) | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+$' } | Select-Object -Unique) -join ','
@@ -472,15 +556,19 @@ if ($net -eq 'lan' -and -not $Domain -and (-not $storedDomain -or $storedDomain 
 if ($Domain -and $net -ne 'lan') { Fail $(if ($It) { '-Domain vale solo con -Network lan.' } else { '-Domain goes with -Network lan.' }) }
 if (($Cert -or $CertKey -or $Https) -and $net -ne 'lan') { Fail $(if ($It) { "L'HTTPS con il tuo certificato vale solo con -Network lan." } else { 'HTTPS with your certificate goes with -Network lan.' }) }
 $netVars = "APPRUA_NETWORK=$net" + $(if ($lanIp) { " APPRUA_LAN_IP=$lanIp" } else { '' })
-if ($Domain) { $netVars += " APPRUA_DOMAIN='$($Domain.Trim().ToLower())'" }
+if ($Domain) {
+  $d = $Domain.Trim().ToLower()
+  if ($d -notmatch '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$') { Fail $(if ($It) { "'$Domain' non $([char]0xE8) un nome valido: per esempio app.tuaazienda.it" } else { "'$Domain' is not a valid name: for example apps.example.com" }) }
+  $netVars += " APPRUA_DOMAIN=$d"
+}
 if ($Https) { $netVars += " APPRUA_HTTPS=$Https" }
 if ($Cert -or $CertKey) {
   # the certificate files, as the Linux sees them (install.sh checks them and keeps a copy)
   foreach ($f in @($Cert, $CertKey)) { if (-not $f -or -not (Test-Path $f -PathType Leaf)) { Fail "Certificate file not found: '$f' (-Cert and -CertKey are both needed)" } }
-  $toWsl = { param($p) ((wsl.exe -d $Distro -u root -- wslpath -a (((Resolve-Path $p).Path) -replace '\\', '/')) -replace "`0", '').Trim() }
-  $netVars += " APPRUA_CERT='$(& $toWsl $Cert)' APPRUA_CERT_KEY='$(& $toWsl $CertKey)'"
+  $toWsl = { param($p) ((wsl.exe -d $Distro -u root -e wslpath -a (((Resolve-Path $p).Path) -replace '\\', '/')) -replace "`0", '').Trim() }
+  $netVars += " APPRUA_CERT=$(BashQ (& $toWsl $Cert)) APPRUA_CERT_KEY=$(BashQ (& $toWsl $CertKey))"
 }
-wsl.exe -d $Distro -u root -- bash -c "rm -rf /opt/apprua-src && mkdir -p /opt/apprua-src && cd '$wslSrc' && tar --exclude=node_modules --exclude=dist -cf - . | tar -xf - -C /opt/apprua-src && APPRUA_WINDOWS=1 APPRUA_LANG=$(if ($It) { 'it' } else { 'en' }) APPRUA_SRC=/opt/apprua-src HOST_MEMORY_GB=$PcMemoryGB HOST_DISK_DIR='$wslDisk' HOST_DNS='$hostDns' $netVars bash /opt/apprua-src/install/install.sh"
+wsl.exe -d $Distro -u root -- bash -c "rm -rf /opt/apprua-src && mkdir -p /opt/apprua-src && cd $(BashQ $wslSrc) && tar --exclude=node_modules --exclude=dist -cf - . | tar -xf - -C /opt/apprua-src && APPRUA_WINDOWS=1 APPRUA_LANG=$(if ($It) { 'it' } else { 'en' }) APPRUA_SRC=/opt/apprua-src HOST_MEMORY_GB=$PcMemoryGB HOST_DISK_DIR=$(BashQ $wslDisk) HOST_DNS='$hostDns' $netVars bash /opt/apprua-src/install/install.sh"
 if ($LASTEXITCODE -ne 0) { Fail "The installation inside Linux stopped: read the messages above." }
 
 # ------------------------------------------------------------------ 4b. Local network: Windows side

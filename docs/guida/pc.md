@@ -117,7 +117,7 @@ Tutti i comandi si lanciano dalla cartella `apprua`, come l'installazione.
 | Aggiornare Apprua (tiene app e dati) | scarica `apprua.zip` dall'[ultima versione](https://github.com/apprua/apprua/releases/latest), estrailo al posto del vecchio e rilancia l'installazione |
 | Togliere Apprua | *Impostazioni > App > App installate*, cerca **Apprua**, poi **Disinstalla**. Oppure: `powershell -ExecutionPolicy Bypass -File install\windows\install-apprua.ps1 -Uninstall` |
 
-Le copie finiscono in `Apprua-backups`, nella tua cartella utente. Durante una copia le app restano spente qualche minuto. La disinstallazione ti propone prima una copia, poi ti chiede di scrivere `ELIMINA`: toglie il Linux "Apprua", le icone e l'avvio automatico. WSL e gli altri Linux del PC non si toccano mai.
+Le copie finiscono in `Apprua-backups`, nella tua cartella utente. Durante una copia le app restano spente qualche minuto. Una copia contiene tutti i dati e i segreti delle app, **non cifrati**: tienila dove solo tu puoi leggerla. Accanto c'è un file `.sha256`, la sua impronta: tienilo insieme alla copia, il ripristino lo controlla e rifiuta una copia danneggiata o cambiata. La disinstallazione ti propone prima una copia, poi ti chiede di scrivere `ELIMINA`: toglie il Linux "Apprua", le icone e l'avvio automatico. WSL e gli altri Linux del PC non si toccano mai.
 
 ## Da sapere
 

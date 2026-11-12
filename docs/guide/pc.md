@@ -117,7 +117,7 @@ Run every command from the `apprua` folder, like the installer.
 | Update Apprua (keeps apps and data) | download `apprua.zip` from the [latest version](https://github.com/apprua/apprua/releases/latest), extract it over the old one and run the installer |
 | Remove Apprua | *Settings > Apps > Installed apps*, find **Apprua**, then **Uninstall**. Or: `powershell -ExecutionPolicy Bypass -File install\windows\install-apprua.ps1 -Uninstall` |
 
-Copies go to `Apprua-backups` in your user folder. During a copy the apps are off for a few minutes. Removal offers a copy first, then asks you to type `DELETE`: it removes the Linux "Apprua", the icons and the start at sign-in. WSL and the other Linux on the PC are never touched.
+Copies go to `Apprua-backups` in your user folder. During a copy the apps are off for a few minutes. A copy holds all the data and the secrets of the apps, **not encrypted**: keep it where only you can read it. Next to it there is a `.sha256` file, its fingerprint: keep the two together, the restore checks it and refuses a copy that was damaged or changed. Removal offers a copy first, then asks you to type `DELETE`: it removes the Linux "Apprua", the icons and the start at sign-in. WSL and the other Linux on the PC are never touched.
 
 ## Good to know
 
