@@ -294,7 +294,9 @@ export async function runDeploy(name: string, user: string, source: 'upload' | '
       await e.setEnv(app.engine_id!, APP_KEY_ENV, appKey(name));
       // from here the engine may start a deployment even if its answer is lost: the time of the request is kept
       getDb().prepare('UPDATE deploys SET requested_at = ? WHERE id = ?').run(new Date().toISOString(), id);
-      deployment = await e.deploy(app.engine_id!);
+      // A static site is built again every time (a few seconds): with the same files the engine would keep the old
+      // image, and with it the web server version it had, also after a fix of that web server.
+      deployment = await e.deploy(app.engine_id!, { rebuild: app.build_pack === 'static' });
       getDb().prepare('UPDATE deploys SET engine_deployment = ? WHERE id = ?').run(deployment, id);
       r = await e.waitDeployment(deployment, config.policy.deployTimeoutMs);
     } catch (err) {

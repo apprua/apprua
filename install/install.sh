@@ -223,7 +223,7 @@ fi
 # by itself (a new Coolify could change its API under Apprua); a new release of Apprua moves it to a newer tested one.
 # APPRUA_COOLIFY_VERSION chooses another version ("latest": the newest, at your own risk).
 COOLIFY_VERSION="${APPRUA_COOLIFY_VERSION:-$(grep -o '"coolify": *"[^"]*"' "$SRC/package.json" 2>/dev/null | grep -o '[0-9][0-9.]*[^"]*' | head -1 || true)}"
-COOLIFY_VERSION="${COOLIFY_VERSION:-4.6.0}"
+COOLIFY_VERSION="${COOLIFY_VERSION:-4.7.6}"
 [ "$COOLIFY_VERSION" = latest ] && COOLIFY_VERSION=""
 coolify_install() {   # also upgrades an existing Coolify, keeping its data
   CP="$(getv COOLIFY_ADMIN_PASSWORD)"; [ -n "$CP" ] || { CP="$(rand 20)Aa1-"; setv COOLIFY_ADMIN_PASSWORD "$CP"; }

@@ -1,4 +1,4 @@
-// Coolify v4 driver (tested with Coolify 4.6). The Coolify token stays on the server: only Apprua uses it.
+// Coolify v4 driver (tested with Coolify 4.7). The Coolify token stays on the server: only Apprua uses it.
 import { appMiddleware, config, required, type Https } from '../config.js';
 import { HttpError } from '../errors.js';
 import type { CreateAppInput, DeployResult, Engine, UpdateAppInput } from './types.js';
@@ -173,8 +173,8 @@ export class CoolifyEngine implements Engine {
     await this.call('PATCH', `/applications/${id}`, { custom_labels: Buffer.from(out.join('\n')).toString('base64'), custom_docker_run_options: APP_RUN_OPTIONS });
   }
 
-  async deploy(id: string): Promise<string> {
-    const r = await this.call<{ deployments: { deployment_uuid: string }[] }>('POST', `/deploy?uuid=${id}&force=false`);
+  async deploy(id: string, opts: { rebuild?: boolean } = {}): Promise<string> {
+    const r = await this.call<{ deployments: { deployment_uuid: string }[] }>('POST', `/deploy?uuid=${id}&force=${opts.rebuild ? 'true' : 'false'}`);
     const d = r.deployments?.[0]?.deployment_uuid;
     if (!d) throw new HttpError(502, 'Coolify did not start a deployment.');
     return d;

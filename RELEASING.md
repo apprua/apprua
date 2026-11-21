@@ -39,7 +39,7 @@ The installer of a release downloads the image made for it; a copy of the code f
 
 ## The version of Coolify
 
-Apprua keeps Coolify on the version it was tested with (`"apprua": { "coolify": "4.6.0" }` in `package.json`) and turns Coolify's own automatic updates off, so a new Coolify never changes its API under Apprua. To move to a newer Coolify: change that version, run the installer on a test machine (it updates Coolify and keeps the apps), check publishing, pausing, logs and secrets, then release. Installs with a newer Coolify than the tested one are left as they are.
+Apprua keeps Coolify on the version it was tested with (`"apprua": { "coolify": "4.7.6" }` in `package.json`) and turns Coolify's own automatic updates off, so a new Coolify never changes its API under Apprua. To move to a newer Coolify: change that version, run the installer on a test machine (it updates Coolify and keeps the apps), check publishing, pausing, logs and secrets, then release. Installs with a newer Coolify than the tested one are left as they are.
 
 ## Once, before the first public release
 

@@ -3,6 +3,22 @@
 Every release of Apprua, newest first. Each section is also the text of the release on GitHub.
 The version numbers follow [semantic versioning](https://semver.org): only a new major version (2.0) can change how things work; minor and patch versions (1.1, 1.0.1) keep it.
 
+## [1.1.1]
+
+**English**
+
+A security release for the engine. Updating is recommended for every installation: run the installer again, as for any update (it keeps apps and data).
+
+- The engine moves from Coolify 4.6.0 to **Coolify 4.7.6**, which updates the programs inside it: nginx 1.31.8 to 1.31.9 (the nginx advisories of 18 November 2026), PHP 8.4.27 to 8.4.28 and Node.js 24.22.1 to 24.22.3. Apprua keeps Coolify's own automatic updates off, so the installer of this version is what brings them. In Apprua the panel of Coolify answers only on the machine itself and speaks plain HTTP/1.1, without HTTP/2.
+- A static site (only HTML pages) is built again at every publication, so it always gets the newest web server image (`nginx:alpine`). Before, publishing the same files again kept the old image. **Sites with only HTML pages published before 18 November 2026:** publish them again once: ask the AI app to do it. They sit behind the proxy, which talks to them in plain HTTP/1.1, so the HTTP/2 and TLS issues of nginx did not reach them from the network.
+
+**Italiano**
+
+Una versione di sicurezza per il motore. Si consiglia di aggiornare ogni installazione: rilancia l'installer, come per ogni aggiornamento (app e dati restano).
+
+- Il motore passa da Coolify 4.6.0 a **Coolify 4.7.6**, che aggiorna i programmi al suo interno: nginx da 1.31.8 a 1.31.9 (gli avvisi di nginx del 18 novembre 2026), PHP da 8.4.27 a 8.4.28 e Node.js da 24.22.1 a 24.22.3. Apprua tiene spenti gli aggiornamenti automatici di Coolify, quindi è l'installer di questa versione a portarli. In Apprua il pannello di Coolify risponde solo sulla macchina stessa e parla HTTP/1.1 semplice, senza HTTP/2.
+- Un sito statico (solo pagine HTML) viene costruito di nuovo a ogni pubblicazione, così prende sempre l'immagine più recente del server web (`nginx:alpine`). Prima, pubblicare di nuovo gli stessi file teneva l'immagine vecchia. **Siti con sole pagine HTML pubblicati prima del 18 novembre 2026:** pubblicali di nuovo una volta: basta chiederlo all'app AI. Stanno dietro al proxy, che parla con loro in HTTP/1.1 semplice, quindi i problemi di nginx con HTTP/2 e TLS non li raggiungevano dalla rete.
+
 ## [1.1.0]
 
 **English**

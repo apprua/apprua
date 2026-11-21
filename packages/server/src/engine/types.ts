@@ -51,8 +51,9 @@ export interface Engine {
   deleteEnv(id: string, key: string): Promise<void>;
   runtimeStatus(id: string): Promise<string | null>;
   runtimeLogs(id: string, lines: number): Promise<string[]>;
-  /** Starts a build + deploy of the latest code; returns the deployment id. */
-  deploy(id: string): Promise<string>;
+  /** Starts a build + deploy of the latest code; returns the deployment id. `rebuild`: build the image again even when
+   *  one for the same code exists (it takes the newest base image, for example the web server of a static site). */
+  deploy(id: string, opts?: { rebuild?: boolean }): Promise<string>;
   /** Follows a deployment until it ends or the timeout expires (timeout 0 = read once). */
   waitDeployment(deploymentId: string, timeoutMs: number): Promise<DeployResult>;
   /** A deployment of the app created since that time and not among the known ones (its id), or null if there is none.

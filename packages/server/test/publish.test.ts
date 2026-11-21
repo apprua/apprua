@@ -21,6 +21,7 @@ const views = await import('../src/views.js');
 
 const calls: string[] = [];
 const envs: Record<string, Set<string>> = {};
+const rebuilds: string[] = [];
 let failNext = 0;
 setEngine({
   name: 'fake',
@@ -39,7 +40,7 @@ setEngine({
   deleteEnv: async (id, key) => { envs[id]?.delete(key); calls.push(`unset ${id} ${key}`); },
   runtimeStatus: async () => 'running',
   runtimeLogs: async () => [],
-  deploy: async (id) => { calls.push(`deploy ${id}`); return `dep-${calls.length}`; },
+  deploy: async (id, opts) => { calls.push(`deploy ${id}`); rebuilds.push(`${id} ${!!opts?.rebuild}`); return `dep-${calls.length}`; },
   waitDeployment: async () => (failNext-- > 0
     ? { status: 'failed', logTail: ['ERROR: failed to resolve source metadata: lookup auth.docker.io on 127.0.0.11:53: server misbehaving'] }
     : { status: 'finished', logTail: [] }),
@@ -74,6 +75,8 @@ test('publish a new static app, then a new version', async () => {
   // Same content again: no new version, but still deployed
   const same = await publish({ user, name: 'my-notes', archivePath: await archiveOf({ 'index.html': '<h1>v1</h1>', 'old.txt': 'x' }), baseCommit: v1 });
   assert.equal(same.commit, v1);
+  // ...and built again, so it gets the newest web server image even with the same files
+  assert.equal(rebuilds.at(-1), 'id-my-notes true');
 
   // New version from an up-to-date copy; deleted files disappear
   const r2 = await publish({ user, name: 'my-notes', archivePath: await archiveOf({ 'index.html': '<h1>v2</h1>' }), baseCommit: v1 });
@@ -92,6 +95,11 @@ test('publish a new static app, then a new version', async () => {
 
   // A stale copy is refused instead of overwriting
   await assert.rejects(publish({ user, name: 'my-notes', archivePath: await archiveOf({ 'index.html': 'stale' }), baseCommit: v1 }), /changed since your copy/);
+});
+
+test('only static sites are always built again; other apps keep the image of the same code', async () => {
+  await publish({ user, name: 'node-app', description: 'x', port: 3000, archivePath: await archiveOf({ 'package.json': '{}', 'index.js': '' }) });
+  assert.equal(rebuilds.at(-1), 'id-node-app false');
 });
 
 test('names of other people and secrets are refused', async () => {
