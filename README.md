@@ -85,3 +85,7 @@ Apprua is free software under the **GNU Affero General Public License v3.0** ([L
 Contributions are welcome, also without writing code: try it, report what doesn't work, suggest ideas, improve the guide. See [CONTRIBUTING](CONTRIBUTING.md). On your first pull request a bot asks you to sign the [Contributor License Agreement](CLA.md) with one comment. For security problems read [SECURITY](SECURITY.md).
 
 The license covers the code, not the brand: the name "Apprua" and the lighthouse logo have their own simple rules in [TRADEMARKS](TRADEMARKS.md).
+
+## Who makes Apprua
+
+Apprua is made and maintained by [Saverio Abbruzzo](https://github.com/SaverioBrux).
